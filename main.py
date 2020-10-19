@@ -58,7 +58,7 @@ if __name__ == '__main__':
     key = os.urandom(32)
     visitor = InfluxQLEncryptor(key)
 
-    for query in chain(basic_queries, ['; '.join(basic_queries)]):
+    for query in chain(basic_queries, ('; '.join(basic_queries),)):
         print(query)
         tree = influxql_grammar.parse(query)
         
