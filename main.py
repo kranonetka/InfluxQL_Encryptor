@@ -35,7 +35,7 @@ class InfluxQLEncryptor(NodeVisitor):
         padded_token = padder.update(token) + padder.finalize()
         encrypted_token = encryptor.update(padded_token) + encryptor.finalize()
         encrypted_token = b64encode(encrypted_token).decode()
-        return f'encrypted({encrypted_token})'
+        return f'"{encrypted_token}"'
     
     visit_identifier = _encrypt_token
     
