@@ -45,8 +45,10 @@ with (root / 'influxql.grammar').open(mode='r', encoding='utf-8') as fp:
     influxql_grammar = Grammar(fp.read())  # Чтобы не заморачиваться с экранированием символов
 
 
+key = os.urandom(32)
+
+
 def encrypt_query(query: str) -> str:
-    key = os.urandom(32)
     visitor = InfluxQLEncryptor(key)
     
     tree = influxql_grammar.parse(query)
