@@ -11,8 +11,6 @@ from parsimonious.nodes import NodeVisitor, Node
 
 root = Path(__file__).parent
 
-g = Generic('en')
-
 
 class InfluxQLEncryptor(NodeVisitor):
     def __init__(self, key: bytes):
@@ -46,14 +44,6 @@ class InfluxQLEncryptor(NodeVisitor):
 with (root / 'influxql.grammar').open(mode='r', encoding='utf-8') as fp:
     influxql_grammar = Grammar(fp.read())  # Чтобы не заморачиваться с экранированием символов
 
-basic_queries = (
-    f"DROP DATABASE fruits",
-    f"CREATE USER {g.person.username('U')} WITH PASSWORD '{g.person.username('l-U-d')}' WITH ALL PRIVILEGES",
-    f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits",
-    f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10",
-    f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10 GROUP BY fruit fill(none)",
-)
-
 
 def encrypt_query(query: str) -> str:
     key = os.urandom(32)
@@ -65,6 +55,14 @@ def encrypt_query(query: str) -> str:
 
 
 if __name__ == '__main__':
+    g = Generic('en')
+    basic_queries = (
+        f"DROP DATABASE fruits",
+        f"CREATE USER {g.person.username('U')} WITH PASSWORD '{g.person.username('l-U-d')}' WITH ALL PRIVILEGES",
+        f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits",
+        f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10",
+        f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10 GROUP BY fruit fill(none)",
+    )
     key = os.urandom(32)
     visitor = InfluxQLEncryptor(key)
 
