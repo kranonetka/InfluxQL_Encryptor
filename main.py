@@ -1,12 +1,15 @@
 import os
 from base64 import b64encode
-from itertools import permutations, chain
+from itertools import chain
+from pathlib import Path
 
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from mimesis.providers import Generic
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
+
+root = Path(__file__).parent
 
 g = Generic('en')
 
@@ -40,7 +43,7 @@ class InfluxQLEncryptor(NodeVisitor):
         return ''.join(visited_children) or node.text  # Для неопределенных токенов возвращаем просто их текст
 
 
-with open('influxql.grammar', 'r', encoding='utf-8') as fp:  # Считывание грамматики из файла
+with (root / 'influxql.grammar').open(mode='r', encoding='utf-8') as fp:
     influxql_grammar = Grammar(fp.read())  # Чтобы не заморачиваться с экранированием символов
 
 basic_queries = (
