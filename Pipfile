@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 parsimonious = "*"
 cryptography = "*"
+mimesis = "*"
 
 [requires]
 python_version = "3.8"
