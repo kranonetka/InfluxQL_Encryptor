@@ -8,7 +8,7 @@ fields               = field (',' field)*
 field                = expr ''
 binary_op            = '+' / '-' / '*' / '/' / '%' / '&' / '|' / '^' / 'AND' / 'OR' / '=' / '!=' / '<>' / '<' / '<=' / '>' / '>='
 expr                 = unary_expr (ws* binary_op ws* unary_expr)*
-unary_expr           = ('(' expr ')') / var_ref / string_lit / int_lit / float_lit / bool_lit
+unary_expr           = ('(' expr ')') / var_ref / string_lit / int_lit / float_lit / bool_lit / duration_lit
 from_clause          = 'FROM' ws+ measurements
 measurement          = (policy_name '.' measurement_name) / measurement_name
 measurements         = measurement (',' measurement)*
@@ -28,6 +28,8 @@ int_lit              = ('+' / '-')? ~'[1-9]' digit*
 float_lit            = ('+' / '-')? (('.' digit+) / (digit+ '.' digit*))
 bool_lit             = 'TRUE' / 'FALSE'
 var_ref              = measurement
+duration_lit         = int_lit ws? duration_unit
+duration_unit        = 'u' / 'µ' / 'ms' / 's' / 'm' / 'h' / 'd' / 'w'
 unquoted_identifier  = letter (letter / digit)*
 quoted_identifier    = '"' letter+ '"'
 letter               = ascii_letter / '_'
