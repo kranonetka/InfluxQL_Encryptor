@@ -54,14 +54,22 @@ basic_queries = (
     f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10 GROUP BY fruit fill(none)",
 )
 
+
+def encrypt_query(query: str) -> str:
+    key = os.urandom(32)
+    visitor = InfluxQLEncryptor(key)
+    
+    tree = influxql_grammar.parse(query)
+    
+    return visitor.visit(tree)
+
+
 if __name__ == '__main__':
     key = os.urandom(32)
     visitor = InfluxQLEncryptor(key)
 
     for query in chain(basic_queries, ('; '.join(basic_queries),)):
         print(query)
-        tree = influxql_grammar.parse(query)
-        
-        res = visitor.visit(tree)
-        print(res)
+        enc = encrypt_query(query)
+        print(enc)
         print()
