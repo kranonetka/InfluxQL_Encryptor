@@ -1,6 +1,8 @@
 import os
+import pickle
+import uuid
 from base64 import b64encode
-from itertools import chain
+from itertools import chain, repeat, islice
 from pathlib import Path
 
 from cryptography.hazmat.primitives import padding
@@ -16,10 +18,19 @@ class InfluxQLEncryptor(NodeVisitor):
     def __init__(self, key: bytes):
         super().__init__()
         self._padder_factory = padding.PKCS7(8 * 32)
+        comp_id = uuid.getnode()
+        comp_id = pickle.dumps(comp_id)
+        iv = b''.join(
+            islice(
+                repeat(comp_id),
+                0,
+                16)
+        )[:16]
+        
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
             mode=modes.CBC(
-                initialization_vector=os.urandom(16)
+                initialization_vector=iv
             )
         )
     
@@ -45,10 +56,7 @@ with (root / 'influxql.grammar').open(mode='r', encoding='utf-8') as fp:
     influxql_grammar = Grammar(fp.read())  # Чтобы не заморачиваться с экранированием символов
 
 
-key = os.urandom(32)
-
-
-def encrypt_query(query: str) -> str:
+def encrypt_query(query: str, key: bytes) -> str:
     visitor = InfluxQLEncryptor(key)
     
     tree = influxql_grammar.parse(query)
@@ -57,6 +65,7 @@ def encrypt_query(query: str) -> str:
 
 
 if __name__ == '__main__':
+    key = os.urandom(32)
     g = Generic('en')
     basic_queries = (
         f"DROP DATABASE fruits",
@@ -65,11 +74,10 @@ if __name__ == '__main__':
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10 GROUP BY fruit fill(none)",
     )
-    key = os.urandom(32)
     visitor = InfluxQLEncryptor(key)
-
+    
     for query in chain(basic_queries, ('; '.join(basic_queries),)):
         print(query)
-        enc = encrypt_query(query)
+        enc = encrypt_query(query, key)
         print(enc)
         print()
