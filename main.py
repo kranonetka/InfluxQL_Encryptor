@@ -55,18 +55,15 @@ class InfluxQLEncryptor(NodeVisitor):
 
 
 class TreeAssembler(NodeVisitor):
-    def generic_visit(self, node, visited_children):
-        return ''.join(visited_children) or node.text  # Для неопределенных токенов возвращаем просто их текст
-    
-    def __getattr__(self, item):
-        return self.type_func
-    
-    def type_func(self, node: Node, visited_nodes):
+    def generic_visit(self, node: Node, visited_children: list):
         if node.expr_name:
             fstr = f'{node.expr_name}({{}})'
         else:
             fstr = '{}'
-        return fstr.format(''.join(visited_nodes) or node.text)
+            
+        return fstr.format(
+            ''.join(visited_children) or node.text
+        )
 
 
 with (root / 'influxql.grammar').open(mode='r', encoding='utf-8') as fp:
@@ -89,6 +86,7 @@ def test_queries():
     
     basic_queries = (
         f"DROP DATABASE fruits",
+        f"CREATE DATABASE fruits",
         f"CREATE USER {g.person.username('U')} WITH PASSWORD '{g.person.username('l-U-d')}' WITH ALL PRIVILEGES",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10",
