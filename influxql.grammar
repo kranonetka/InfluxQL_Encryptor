@@ -1,8 +1,9 @@
 query                = statement (';' ws* statement)*
-statement            = create_user_stmt / drop_database_stmt / select_stmt / create_database_stmt
+statement            = create_user_stmt / drop_database_stmt / select_stmt / create_database_stmt / show_databases_stmt
 create_user_stmt     = 'CREATE USER' ws+ user_name ws+ 'WITH PASSWORD' ws+ password (ws+ 'WITH ALL PRIVILEGES')?
 create_database_stmt = 'CREATE DATABASE' ws+ db_name
 drop_database_stmt   = 'DROP DATABASE' ws+ db_name
+show_databases_stmt  = 'SHOW DATABASES'
 select_stmt          = 'SELECT' ws+ fields ws+ from_clause (ws+ where_clause)? (ws+ group_by_clause)?
 fields               = field (',' field)*
 field                = expr ''

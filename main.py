@@ -2,12 +2,11 @@ import os
 import pickle
 import uuid
 from base64 import b64encode
-from itertools import chain, repeat, islice
+from itertools import chain, cycle, islice
 from pathlib import Path
 
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from mimesis.providers import Generic
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
 
@@ -22,10 +21,10 @@ class InfluxQLEncryptor(NodeVisitor):
         comp_id = pickle.dumps(comp_id)
         iv = b''.join(
             islice(
-                repeat(comp_id),
+                cycle(comp_id),
                 0,
                 16)
-        )[:16]
+        )
         
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
@@ -65,8 +64,10 @@ def encrypt_query(query: str, key: bytes) -> str:
 
 
 if __name__ == '__main__':
-    key = os.urandom(32)
+    from mimesis.providers import Generic
+    
     g = Generic('en')
+    key = os.urandom(32)
     basic_queries = (
         f"DROP DATABASE fruits",
         f"CREATE USER {g.person.username('U')} WITH PASSWORD '{g.person.username('l-U-d')}' WITH ALL PRIVILEGES",
