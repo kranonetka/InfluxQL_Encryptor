@@ -1,0 +1,22 @@
+lines                = line ('\n' line)*
+line                 = measurement (',' tag_set)? ws field_set ws timestamp?
+measurement          = string_lit ''
+string_lit           = unquoted_string / quoted_string
+bool_lit             = 't' / 'true' / 'T' / 'True' / 'TRUE' / 'f' / 'false' / 'F' / 'False' / 'FALSE'
+int_lit              = ('+' / '-')? ~'[1-9]' digit* 'i'
+float_lit            = ('+' / '-')? ((('.' digit+) / (digit+ '.' digit*)) ('e' ('+' / '-') digit+)?)
+unquoted_string      = ~'[a-z0-9_-]'i+
+quoted_string        = '"' ~'[^\n"]*' '"'
+tag_set              = tag (',' tag)*
+tag                  = tag_key '=' tag_value
+tag_key              = string_lit ''
+tag_value            = string_lit ''
+field_set            = field (',' field)*
+field                = field_key '=' field_value
+field_key            = string_lit ''
+field_value          = float_lit / string_lit / bool_lit / int_lit
+timestamp            = ('+' / '-')? ~'[1-9]' digit*
+letter               = ascii_letter / '_'
+digit                = ~'[0-9]'
+ascii_letter         = ~'[a-z]'i
+ws                   = ~'\s'

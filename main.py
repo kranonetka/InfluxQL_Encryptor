@@ -1,12 +1,15 @@
-import os
-import pickle
+import random
+import string
+import struct
 import uuid
 from base64 import b64encode
-from itertools import chain, cycle, islice
+from functools import partial
+from operator import mul
 from pathlib import Path
 
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from itertools import chain, cycle, islice
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
 
@@ -18,8 +21,8 @@ class InfluxQLEncryptor(NodeVisitor):
         super().__init__()
         self._padder_factory = padding.PKCS7(8 * 32)
         comp_id = uuid.getnode()
-        comp_id = pickle.dumps(comp_id)
-        iv = b''.join(
+        comp_id = struct.pack('>Q', comp_id)[2:]
+        iv = bytes(
             islice(
                 cycle(comp_id),
                 0,
@@ -51,23 +54,39 @@ class InfluxQLEncryptor(NodeVisitor):
         return ''.join(visited_children) or node.text  # Для неопределенных токенов возвращаем просто их текст
 
 
+class TreeAssembler(NodeVisitor):
+    def generic_visit(self, node, visited_children):
+        return ''.join(visited_children) or node.text  # Для неопределенных токенов возвращаем просто их текст
+    
+    def __getattr__(self, item):
+        return self.type_func
+    
+    def type_func(self, node: Node, visited_nodes):
+        if node.expr_name:
+            fstr = f'{node.expr_name}({{}})'
+        else:
+            fstr = '{}'
+        return fstr.format(''.join(visited_nodes) or node.text)
+
+
 with (root / 'influxql.grammar').open(mode='r', encoding='utf-8') as fp:
-    influxql_grammar = Grammar(fp.read())  # Чтобы не заморачиваться с экранированием символов
+    influxql_grammar = Grammar(fp.read())
+
+with (root / 'write.grammar').open(mode='r', encoding='utf-8') as fp:
+    write_grammar = Grammar(fp.read())
 
 
 def encrypt_query(query: str, key: bytes) -> str:
-    visitor = InfluxQLEncryptor(key)
-    
     tree = influxql_grammar.parse(query)
-    
+    visitor = InfluxQLEncryptor(key)
     return visitor.visit(tree)
 
 
-if __name__ == '__main__':
+def test_queries():
     from mimesis.providers import Generic
-    
     g = Generic('en')
-    key = os.urandom(32)
+    key = bytes(islice(cycle(b'mysuppakey'), 0, 32))
+    
     basic_queries = (
         f"DROP DATABASE fruits",
         f"CREATE USER {g.person.username('U')} WITH PASSWORD '{g.person.username('l-U-d')}' WITH ALL PRIVILEGES",
@@ -75,10 +94,69 @@ if __name__ == '__main__':
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10 GROUP BY fruit fill(none)",
     )
-    visitor = InfluxQLEncryptor(key)
     
     for query in chain(basic_queries, ('; '.join(basic_queries),)):
         print(query)
         enc = encrypt_query(query, key)
         print(enc)
         print()
+
+
+def test_write(float_sensors=1, int_sensors=1, str_sensors=1, bool_sensors=1, duration=1):
+    def random_float() -> str:
+        """
+        :return: Случайное вещественное число из диапазона [0;1000) для записи в InfluxDB
+        """
+        return '{:.5e}'.format(random.random() * 1000)
+    
+    def random_int() -> str:
+        """
+        :return: Случайное целое число из диапазона [0; 10000) для записи в InfluxDB
+        """
+        return f'{random.randrange(1000)}i'
+    
+    def random_str() -> str:
+        """
+        :return: Случайная строка длина 60 для записи в InfluxDB
+        """
+        return '"{}"'.format(''.join(random.choices(string.ascii_letters, k=60)))
+    
+    def random_bool() -> str:
+        """
+        :return: Случайное булево значение для записи в InfluxDB
+        """
+        return random.choice(('t', 'f', 'T', 'F', 'true', 'false', 'True', 'False', 'TRUE', 'FALSE'))
+    
+    start_timestamp_ms = random.randint(0, 0xffffffff)
+    dot_template = 'python_measurement,thread={} {{{{}}}}={{{{}}}},q=0 {{}}'.format(1)
+    
+    payload = '\n'.join(
+        '\n'.join(
+            chain(
+                (time_template.format('float', random_float()) for _ in range(float_sensors)),
+                (time_template.format('int', random_int()) for _ in range(int_sensors)),
+                (time_template.format('str', random_str()) for _ in range(str_sensors)),
+                (time_template.format('bool', random_bool()) for _ in range(bool_sensors)),
+            )
+        )
+        for time_template in map(
+            dot_template.format,
+            map(
+                start_timestamp_ms.__add__,
+                map(
+                    partial(mul, 10),
+                    range(duration)
+                )
+            )
+        )
+    )
+    print(payload)
+    tree = write_grammar.parse(payload)
+    print(tree)
+    assemble_visitor = TreeAssembler()
+    assembled = assemble_visitor.visit(tree)
+    print(assembled)
+
+
+if __name__ == '__main__':
+    test_write(duration=5)
