@@ -19,7 +19,7 @@ root = Path(__file__).parent
 class InfluxQLEncryptor(NodeVisitor):
     def __init__(self, key: bytes):
         super().__init__()
-        self._padder_factory = padding.PKCS7(8 * 32)
+        self._padder_factory = padding.PKCS7(8 * len(key))
         comp_id = uuid.getnode()
         comp_id = struct.pack('>Q', comp_id)[2:]
         iv = bytes(
@@ -28,7 +28,6 @@ class InfluxQLEncryptor(NodeVisitor):
                 0,
                 16)
         )
-        
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
             mode=modes.CBC(
