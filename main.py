@@ -4,12 +4,12 @@ import struct
 import uuid
 from base64 import b64encode
 from functools import partial
+from itertools import chain, cycle, islice
 from operator import mul
 from pathlib import Path
 
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from itertools import chain, cycle, islice
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
 
@@ -60,7 +60,7 @@ class TreeAssembler(NodeVisitor):
             fstr = f'{node.expr_name}({{}})'
         else:
             fstr = '{}'
-            
+        
         return fstr.format(
             ''.join(visited_children) or node.text
         )
@@ -91,6 +91,7 @@ def test_queries():
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10 GROUP BY fruit fill(none)",
+        'SELECT "water_level" FROM "h2o_feet" WHERE time > now() - 1h'
     )
     
     for query in chain(basic_queries, ('; '.join(basic_queries),)):
@@ -156,5 +157,16 @@ def test_write(float_sensors=1, int_sensors=1, str_sensors=1, bool_sensors=1, du
     print(assembled)
 
 
+def test_selects():
+    with (root / 'select_queries.sql').open(mode='r', encoding='utf-8') as fp:
+        queries = list(map(str.rstrip, fp.readlines()))
+    for query in queries:
+        print(query)
+        influxql_grammar.parse(query)
+
+
 if __name__ == '__main__':
-    test_write(duration=5)
+    test_selects()
+    # test_queries()
+    
+    # test_write(duration=5)
