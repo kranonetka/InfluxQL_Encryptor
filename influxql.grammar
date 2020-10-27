@@ -9,8 +9,9 @@ fields               = (field (',' field)*) / '*'
 field                = expr ''
 binary_op            = '+' / '-' / '*' / '/' / '%' / '&' / '|' / '^' / 'AND' / 'OR' / '=' / '!=' / '<>' / '<='/ '<' / '>=' / '>'
 expr                 = unary_expr (ws* binary_op ws* unary_expr)*
-unary_expr           = ('(' expr ')') / (func '(' expr ')') / special / var_ref / string_lit / float_lit / duration_lit / int_lit / bool_lit / time_lit
-func                 = 'min' / 'max' / 'mean' / 'count'
+unary_expr           = ('(' expr ')') / aggregation / special / var_ref / string_lit / float_lit / duration_lit / int_lit / bool_lit / time_lit
+aggregation          = aggregation_func '(' expr ')'
+aggregation_func     = unquoted_identifier ''
 special              = ('time(' duration_lit ')') / 'time' / 'now()'
 from_clause          = 'FROM' ws+ measurements
 measurement          = (policy_name '.' measurement_name) / measurement_name
