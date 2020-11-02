@@ -10,8 +10,9 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
+
+from grammars import influxql_grammar, write_grammar
 
 root = Path(__file__).parent
 
@@ -63,13 +64,6 @@ class TreeAssembler(NodeVisitor):
         return fstr.format(
             ''.join(visited_children) or node.text
         )
-
-
-with (root / 'influxql.grammar').open(mode='r', encoding='utf-8') as fp:
-    influxql_grammar = Grammar(fp.read())
-
-with (root / 'write.grammar').open(mode='r', encoding='utf-8') as fp:
-    write_grammar = Grammar(fp.read())
 
 
 def encrypt_query(query: str, key: bytes) -> str:
@@ -166,6 +160,5 @@ def test_selects():
 
 if __name__ == '__main__':
     test_selects()
-    # test_queries()
-    
-    # test_write(duration=5)
+    test_queries()
+    test_write(duration=5)
