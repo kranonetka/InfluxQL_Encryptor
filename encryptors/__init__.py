@@ -1,4 +1,5 @@
 from base64 import b64encode
+import pickle
 
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -39,6 +40,41 @@ class WriteEncryptor(_BaseEncryptor):
     def visit_identifier(self, node: Node, visited_children: list):
         ident = node.text
         enc = self._encrypt_bytes(ident.encode())
+        enc = b64encode(enc).rstrip(b'=')
+        return enc.decode()
+
+    def visit_float_lit(self, node: Node, visited_children: list):
+        value = node.text
+        value = float(value)
+        pickle_bytes = pickle.dumps(value)
+        enc = self._encrypt_bytes(pickle_bytes)
+        enc = b64encode(enc).rstrip(b'=')
+        return enc.decode()
+
+    def visit_bool_lit(self, node: Node, visited_children: list):
+        value = node.text
+        if value in {'t', 'true', 'T', 'True', 'TRUE'}:
+            value = True
+        else:
+            value = False
+        pickle_bytes = pickle.dumps(value)
+        enc = self._encrypt_bytes(pickle_bytes)
+        enc = b64encode(enc).rstrip(b'=')
+        return enc.decode()
+
+    def visit_string_lit(self, node: Node, visited_children: list):
+        value = node.text
+        value = str(value)
+        pickle_bytes = pickle.dumps(value)
+        enc = self._encrypt_bytes(pickle_bytes)
+        enc = b64encode(enc).rstrip(b'=')
+        return enc.decode()
+
+    def visit_int_lit(self, node: Node, visited_children: list):
+        value = node.text
+        value = int(value.rstrip("i"))
+        pickle_bytes = pickle.dumps(value)
+        enc = self._encrypt_bytes(pickle_bytes)
         enc = b64encode(enc).rstrip(b'=')
         return enc.decode()
 
