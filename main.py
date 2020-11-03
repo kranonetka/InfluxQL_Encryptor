@@ -1,10 +1,8 @@
-import json
 import uuid
 from base64 import b64decode, b64encode
 from functools import partial
 
 import requests
-from requests import Response
 
 from encryptors import WriteEncryptor
 from grammars import write_grammar
@@ -40,21 +38,25 @@ def write_payload(payload: str):
     return requests.post(url + '/write', params=dict(db='test'), data=payload)
 
 
-
 if __name__ == '__main__':
     from itertools import islice, cycle
-    
+
     key = bytes(islice(cycle(b'key'), 0, 32))
 
-    payloads = {
-        f'another_meas,uuid={str(uuid.uuid4())} float_value=45.24',
-        f'another_meas,uuid={str(uuid.uuid4())} int_value=67i',
-        f'another_meas,uuid={str(uuid.uuid4())} bool_value=False',
-        f'another_meas,uuid={str(uuid.uuid4())} bool_value=false',
-        f'another_meas,uuid={str(uuid.uuid4())} bool_value=f',
-        f'another_meas,uuid={str(uuid.uuid4())} bool_value=F',
-        f'another_meas,uuid={str(uuid.uuid4())} string_value=Hello'
+    values = {
+        'int_value=25i',
+        'float_value=75.8',
+        'bool_value=TRUE',
+        'bool_value=True',
+        'bool_value=T',
+        'bool_value=true',
+        'bool_value=t',
+        'string_value=Hello'
     }
-    
+
+    payloads = set()
+    for value in values:
+        payloads.add(f'another_meas,uuid={str(uuid.uuid4())} {value}')
+
     for payload in map(partial(encrypt_write, key=key), payloads):
         print(f'{payload}: {write_payload(payload)}')
