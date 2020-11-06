@@ -31,20 +31,16 @@ class _BaseEncryptor(NodeVisitor):
         unpadder = self._padder_factory.unpadder()
         return unpadder.update(decrypted) + unpadder.finalize()
     
-    def generic_visit(self, node: Node, visited_children: list):
+    def generic_visit(self, node: Node, visited_children: tuple):
         return ''.join(visited_children) or node.text
 
 
 class WriteEncryptor(_BaseEncryptor):
-    def visit_identifier(self, node: Node, visited_children: list):
+    def visit_identifier(self, node: Node, visited_children: tuple):
         ident = node.text
         enc = self._encrypt_bytes(ident.encode())
         enc = b64encode(enc).rstrip(b'=')
         return enc.decode()
-
-
-class QueryEncryptor(_BaseEncryptor):
-    pass
 
 
 if __name__ == '__main__':
