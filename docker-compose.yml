@@ -6,3 +6,19 @@ services:
     image: influxdb:1.8-alpine
     ports:
     - 8086:8086
+
+  payload_generator:
+    build: docker_images/payload_generator
+    depends_on:
+      - influxdb
+    links:
+      - influxdb
+
+  grafana:
+      image: grafana/grafana
+      environment:
+      - GF_SERVER_HTTP_PORT=8092
+      ports:
+      - 8092:8092
+      links:
+      - influxdb
