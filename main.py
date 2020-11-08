@@ -3,17 +3,21 @@ from base64 import b64decode, b64encode
 from functools import partial
 
 import requests
+from pyope.ope import OPE
 
-from encryptors import WriteEncryptor
+from encryptors.write_encryptor import WriteEncryptor
 from grammars import write_grammar
 
 url = 'http://localhost:8086'
 
 
-def encrypt_write(payload: str, key: bytes) -> str:
+def encrypt_write(payload: str, key: bytes, ope_key: bytes) -> str:
     tree = write_grammar.parse(payload)
-    encryptor = WriteEncryptor(key)
-    return encryptor.visit(tree)
+    encryptor = WriteEncryptor(key, ope_key=ope_key)
+    res = encryptor.visit(tree)
+    types = encryptor.types
+    print(f'types: {types}')
+    return res
 
 
 def decrypt_identifier(encrypted_identifier: str, key: bytes) -> str:
@@ -42,6 +46,7 @@ if __name__ == '__main__':
     from itertools import islice, cycle
 
     key = bytes(islice(cycle(b'key'), 0, 32))
+    ope_key = OPE.generate_key()
 
     values = {
         'int_value=25i',
@@ -58,5 +63,8 @@ if __name__ == '__main__':
     for value in values:
         payloads.add(f'another_meas,uuid={str(uuid.uuid4())} {value}')
 
-    for payload in map(partial(encrypt_write, key=key), payloads):
+    for payload in payloads:
+        print(payload)
+
+    for payload in map(partial(encrypt_write, key=key, ope_key=ope_key), payloads):
         print(f'{payload}: {write_payload(payload)}')
