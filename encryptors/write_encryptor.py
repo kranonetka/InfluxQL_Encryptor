@@ -38,13 +38,13 @@ class WriteEncryptor(_BaseEncryptor):
     
     def visit_identifier(self, node: Node, visited_children: tuple):
         ident = node.text
-        enc = self._encrypt_bytes(ident.encode())
-        enc = b64encode(enc).rstrip(b'=')
-        return enc.decode()
+        encrypted = self._encrypt_bytes(ident.encode())
+        encoded = b64encode(encrypted).rstrip(b'=')
+        return encoded.decode()
     
     def visit_int_lit(self, node: Node, visited_children: tuple):
-        value = int(node.text[:-1])
-        encrypted_value = self._ope_cipher.encrypt(value)
+        int_value = int(node.text[:-1])
+        encrypted_value = self._ope_cipher.encrypt(int_value)
         return f'{encrypted_value}i'
     
     def visit_float_lit(self, node: Node, visited_children: tuple):
