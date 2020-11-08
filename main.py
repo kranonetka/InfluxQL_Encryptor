@@ -56,14 +56,14 @@ if __name__ == '__main__':
         'single_upper_bool=T',
         'lower_bool=false',
         'single_lower_bool=f',
-        'string_value="Hello"'
+        'string_value=Hello'
     }
     
     payload_tpl = 'another_meas,uuid={} {}'
-    payloads = set()
+    payloads = list()
     for comb_len in range(1, 6):
         for values_set in map(','.join, combinations(values, comb_len)):
-            payloads.add(
+            payloads.append(
                 payload_tpl.format(
                     str(uuid.uuid4()),
                     values_set
