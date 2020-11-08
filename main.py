@@ -1,8 +1,8 @@
 import uuid
 from base64 import b64decode, b64encode
-from functools import partial
 
 import requests
+from itertools import combinations
 from pyope.ope import OPE
 
 from encryptors.write_encryptor import WriteEncryptor
@@ -44,27 +44,33 @@ def write_payload(payload: str):
 
 if __name__ == '__main__':
     from itertools import islice, cycle
-
+    
     key = bytes(islice(cycle(b'key'), 0, 32))
     ope_key = OPE.generate_key()
-
+    
     values = {
         'int_value=25i',
         'float_value=75.8',
-        'bool_value=TRUE',
-        'bool_value=True',
-        'bool_value=T',
-        'bool_value=true',
-        'bool_value=t',
-        'string_value=Hello'
+        'upper_bool=TRUE',
+        'camel_bool=True',
+        'single_upper_bool=T',
+        'lower_bool=false',
+        'single_lower_bool=f',
+        'string_value="Hello"'
     }
-
+    
+    payload_tpl = 'another_meas,uuid={} {}'
     payloads = set()
-    for value in values:
-        payloads.add(f'another_meas,uuid={str(uuid.uuid4())} {value}')
-
+    for comb_len in range(1, 4):
+        for values_set in map(','.join, combinations(values, comb_len)):
+            payloads.add(payload_tpl.format(str(uuid.uuid4()), values_set))
+    
     for payload in payloads:
+        encrypted_payload = encrypt_write(payload, key=key, ope_key=ope_key)
         print(payload)
-
-    for payload in map(partial(encrypt_write, key=key, ope_key=ope_key), payloads):
-        print(f'{payload}: {write_payload(payload)}')
+        print(encrypted_payload)
+        resp = write_payload(payload)
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError:
+            raise Exception(f'{resp.status_code}: {resp.text}')
