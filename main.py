@@ -61,15 +61,20 @@ if __name__ == '__main__':
     
     payload_tpl = 'another_meas,uuid={} {}'
     payloads = set()
-    for comb_len in range(1, 4):
+    for comb_len in range(1, 6):
         for values_set in map(','.join, combinations(values, comb_len)):
-            payloads.add(payload_tpl.format(str(uuid.uuid4()), values_set))
+            payloads.add(
+                payload_tpl.format(
+                    str(uuid.uuid4()),
+                    values_set
+                )
+            )
     
     for payload in payloads:
         encrypted_payload = encrypt_write(payload, key=key, ope_key=ope_key)
         print(payload)
         print(encrypted_payload)
-        resp = write_payload(payload)
+        resp = write_payload(encrypted_payload)
         try:
             resp.raise_for_status()
         except requests.HTTPError:
