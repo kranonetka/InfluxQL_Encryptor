@@ -60,8 +60,8 @@ class WriteEncryptor(_BaseEncryptor):
     #         value = False
     #     return self._get_encrypted_pickle_bytes(value)
     
-    def visit_string_lit(self, node: Node, visited_children: tuple):
-        string = node.text.encode()
+    def visit_quoted_string(self, node: Node, visited_children: tuple):
+        string = node.text[1:-1].encode()
         encrypted_string = self._encrypt_bytes(string)
-        encoded = b64encode(encrypted_string).rstrip(b'=')
-        return encoded.decode()
+        encoded = b64encode(encrypted_string)
+        return f'"{encoded.decode()}"'

@@ -3,17 +3,22 @@ from base64 import b64decode, b64encode
 
 import requests
 from itertools import combinations
+from itertools import islice, cycle
 from pyope.ope import OPE
 
 from encryptors.write_encryptor import WriteEncryptor
 from grammars import write_grammar
 
+key = bytes(islice(cycle(b'key'), 0, 32))
+ope_key = OPE.generate_key()
 url = 'http://localhost:8086'
 
+encryptor = WriteEncryptor(key, ope_key=ope_key)
 
-def encrypt_write(payload: str, key: bytes, ope_key: bytes) -> str:
+
+def encrypt_write(payload: str) -> str:
     tree = write_grammar.parse(payload)
-    encryptor = WriteEncryptor(key, ope_key=ope_key)
+    
     res = encryptor.visit(tree)
     types = encryptor.types
     print(f'types: {types}')
@@ -43,10 +48,6 @@ def write_payload(payload: str):
 
 
 if __name__ == '__main__':
-    from itertools import islice, cycle
-    
-    key = bytes(islice(cycle(b'key'), 0, 32))
-    ope_key = OPE.generate_key()
     
     values = {
         'int_value=25i',
@@ -56,26 +57,22 @@ if __name__ == '__main__':
         'single_upper_bool=T',
         'lower_bool=false',
         'single_lower_bool=f',
-        'string_value=Hello'
+        'string_value="Hello"'
     }
     
     payload_tpl = 'another_meas,uuid={} {}'
     payloads = list()
     for comb_len in range(1, 6):
         for values_set in map(','.join, combinations(values, comb_len)):
-            payloads.append(
-                payload_tpl.format(
-                    str(uuid.uuid4()),
-                    values_set
-                )
+            payload = payload_tpl.format(
+                str(uuid.uuid4()),
+                values_set
             )
-    
-    for payload in payloads:
-        encrypted_payload = encrypt_write(payload, key=key, ope_key=ope_key)
-        print(payload)
-        print(encrypted_payload)
-        resp = write_payload(encrypted_payload)
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError:
-            raise Exception(f'{resp.status_code}: {resp.text}')
+            encrypted_payload = encrypt_write(payload)
+            print(payload)
+            print(encrypted_payload)
+            resp = write_payload(encrypted_payload)
+            try:
+                resp.raise_for_status()
+            except requests.HTTPError:
+                raise Exception(f'{resp.status_code}: {resp.text}')

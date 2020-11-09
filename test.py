@@ -78,8 +78,8 @@ def test_queries():
     key = bytes(islice(cycle(b'mysuppakey'), 0, 32))
     
     basic_queries = (
-        f"DROP DATABASE fruits",
-        f"CREATE DATABASE fruits",
+        "DROP DATABASE fruits",
+        "CREATE DATABASE fruits",
         f"CREATE USER {g.person.username('U')} WITH PASSWORD '{g.person.username('l-U-d')}' WITH ALL PRIVILEGES",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits",
         f"SELECT \"autogen\".\"{''.join(g.food.fruit().split())}\" FROM fruits WHERE n=10",

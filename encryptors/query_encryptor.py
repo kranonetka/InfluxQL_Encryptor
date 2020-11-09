@@ -1,11 +1,12 @@
 import json
-import re
-import time
-from base64 import b64encode
 import operator
+import re
+from base64 import b64encode
 from statistics import mean
+
 import pandas as pd
 import requests
+import time
 from itertools import groupby
 from parsimonious.nodes import Node
 
@@ -121,7 +122,7 @@ def process_values(values, aggregation_func, is_group=False, group_dimension=Non
     new_values = []
     for key, group in groupby(values, key=lambda x: date_to_boundary(x[0], group_time_interval, group_offset_interval)):
         new_values.append([key, func(map(operator.itemgetter(1), group))])
-        
+    
     return new_values
 
 
@@ -148,7 +149,7 @@ if __name__ == '__main__':
         q=q
     )).json()
     
-    #resp['results'][0]['series'][0]['values'] = process_values(resp['results'][0]['series'][0]['values'], **add_info)
+    # resp['results'][0]['series'][0]['values'] = process_values(resp['results'][0]['series'][0]['values'], **add_info)
     stop_time = time.time()
     print(f'{stop_time - start_time:.2f}')
     
