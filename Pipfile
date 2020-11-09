@@ -4,14 +4,14 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+flake8 = "*"
 
 [packages]
 parsimonious = "*"
 cryptography = "*"
 mimesis = "*"
 requests = "*"
-numpy = "==1.19.3"
-pandas = "*"
+pyope = "*"
 
 [requires]
 python_version = "3.8"

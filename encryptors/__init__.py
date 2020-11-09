@@ -1,13 +1,11 @@
-import pickle
-from base64 import b64encode
-
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from parsimonious.nodes import NodeVisitor, Node
+from pyope.ope import OPE, ValueRange
 
 
 class _BaseEncryptor(NodeVisitor):
-    def __init__(self, key: bytes):
+    def __init__(self, key: bytes, ope_key: bytes):
         super().__init__()
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
@@ -16,6 +14,7 @@ class _BaseEncryptor(NodeVisitor):
             )
         )
         self._padder_factory = padding.PKCS7(8 * len(key))
+        self._ope_cipher = OPE(ope_key, in_range=ValueRange(0, 2**60 - 1), out_range=ValueRange(0, 2**64 - 1))
 
     def _encrypt_bytes(self, payload: bytes) -> bytes:
         padder = self._padder_factory.padder()
@@ -34,40 +33,6 @@ class _BaseEncryptor(NodeVisitor):
 
     def generic_visit(self, node: Node, visited_children: tuple):
         return ''.join(visited_children) or node.text
-
-
-class WriteEncryptor(_BaseEncryptor):
-    def _get_encrypted_pickle_bytes(self, data):
-        pickle_bytes = pickle.dumps(data)
-        enc = self._encrypt_bytes(pickle_bytes)
-        enc = b64encode(enc).rstrip(b'=')
-        return enc.decode()
-
-    def visit_identifier(self, node: Node, visited_children: tuple):
-        ident = node.text
-        enc = self._encrypt_bytes(ident.encode())
-        enc = b64encode(enc).rstrip(b'=')
-        return enc.decode()
-
-    def visit_int_lit(self, node: Node, visited_children: list):
-        value = node.text
-        value = int(value.rstrip("i"))
-        return self._get_encrypted_pickle_bytes(value)
-
-    def visit_float_lit(self, node: Node, visited_children: list):
-        value = float(node.text)
-        return self._get_encrypted_pickle_bytes(value)
-
-    def visit_bool_lit(self, node: Node, visited_children: list):
-        if node.text in {'t', 'true', 'T', 'True', 'TRUE'}:
-            value = True
-        else:
-            value = False
-        return self._get_encrypted_pickle_bytes(value)
-
-    def visit_string_lit(self, node: Node, visited_children: list):
-        value = node.text
-        return self._get_encrypted_pickle_bytes(value)
 
 
 if __name__ == '__main__':

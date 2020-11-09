@@ -14,7 +14,7 @@ tag_value            = string_lit ''
 field_set            = field (',' field)*
 field                = field_key '=' field_value
 field_key            = identifier ''
-field_value          = int_lit / float_lit / bool_lit / string_lit
+field_value          = int_lit / float_lit / bool_lit / quoted_string
 timestamp            = ('+' / '-')? ((~'[1-9]' digit*) / digit)
 identifier           = letter (letter / digit)*
 letter               = ascii_letter / '_'
