@@ -1,9 +1,14 @@
 import requests
 import psutil
 import socket
+import os
 
-query_url = 'http://influxdb:8086/query'
-write_url = 'http://influxdb:8086/write'
+for env_var in {'TARGET_HOST', 'TARGET_PORT'}:
+    if env_var not in os.environ:
+        raise RuntimeError(f'Missing environment variable {env_var}')
+
+query_url = f'http://{os.environ["TARGET_HOST"]}:{os.environ["TARGET_PORT"]}/query'
+write_url = f'http://{os.environ["TARGET_HOST"]}:{os.environ["TARGET_PORT"]}/write'
 
 if __name__ == '__main__':
     payload_tpl = f'laptop_meas,hostname={socket.gethostname()} ' \

@@ -24,8 +24,12 @@ services:
     build: docker_images/payload_generator
     depends_on:
       - influxdb
+    environment:
+      - TARGET_HOST=influxdb
+      - TARGET_PORT=8086
     links:
       - influxdb
+      - proxy
 
   grafana:
       image: grafana/grafana
@@ -35,3 +39,4 @@ services:
       - 8092:8092
       links:
       - influxdb
+      - proxy

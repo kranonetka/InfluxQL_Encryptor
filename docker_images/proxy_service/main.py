@@ -1,13 +1,19 @@
-from flask import Flask, request
 import os
+from itertools import islice, cycle
+
+from flask import Flask, request
+
 from encryptors import QueryEncryptor, WriteEncryptor
 
 for env_var in {'INFLUXDB_HOST', 'INFLUXDB_PORT'}:
     if env_var not in os.environ:
         raise RuntimeError(f'Missing environment variable {env_var}')
 
-
 app = Flask(__name__)
+
+key = bytes(islice(cycle(b'key'), 0, 32))
+write_encryptor = WriteEncryptor(key)
+query_encryptor = QueryEncryptor(key)
 
 
 @app.route('/')
