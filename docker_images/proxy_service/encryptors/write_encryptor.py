@@ -60,5 +60,12 @@ class WriteEncryptor(_BaseEncryptor):
     def visit_quoted_string(self, node: Node, visited_children: tuple):
         string = node.text[1:-1].encode()
         encrypted_string = self._encrypt_bytes(string)
-        encoded = b64encode(encrypted_string)
+        encoded = b64encode(encrypted_string).rstrip(b'=')
         return f'"{encoded.decode()}"'
+
+    def visit_unquoted_string(self, node: Node, visited_children: tuple):
+        string = node.text.encode()
+        encrypted_string = self._encrypt_bytes(string)
+        encoded = b64encode(encrypted_string).rstrip(b'=')
+        return f'{encoded.decode()}'
+
