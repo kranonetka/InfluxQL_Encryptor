@@ -1,10 +1,9 @@
 import random
 import uuid
-from base64 import b64encode
-
-import requests
 from itertools import combinations
 from itertools import islice, cycle
+
+import requests
 
 from docker_images.proxy_service.encryptors import WriteEncryptor, QueryEncryptor
 
@@ -29,12 +28,12 @@ def write_payload(payload: str):
 
 
 if __name__ == '__main__':
-    
+
     values = (
         lambda: f'int_value={random.randint(-1000, 1000)}i',
         lambda: f'float_value={random.uniform(-1000, 1000)}',
     )
-    
+
     payload_tpl = 'another_meas,uuid={} {}'
     payloads = list()
     for comb_len in range(1, 6):
