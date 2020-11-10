@@ -7,6 +7,19 @@ services:
     ports:
     - 8086:8086
 
+  proxy:
+    build: docker_images/proxy_service
+    ports:
+    - 5000:5000
+    links:
+      - influxdb
+    environment:
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+      - FLASK_PORT=5000
+    depends_on:
+      - influxdb
+
   payload_generator:
     build: docker_images/payload_generator
     depends_on:

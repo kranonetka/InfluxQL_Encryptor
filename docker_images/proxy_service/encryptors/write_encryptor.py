@@ -4,25 +4,22 @@ from typing import Any
 
 from parsimonious.nodes import Node
 
-from encryptors import _BaseEncryptor
+from ._base_encryptor import _BaseEncryptor
+from ._grammars import write_grammar
 
 
 class WriteEncryptor(_BaseEncryptor):
+    grammar = write_grammar
+    
     def __init__(self, *args, **kwargs):
         super(WriteEncryptor, self).__init__(*args, **kwargs)
         self._types = dict()
-        self._ratio = (1 << 50)
     
     @property
     def types(self):
         retval = self._types
         self._types = dict()
         return retval
-    
-    def _float_to_int(self, value: float) -> int:
-        r = (value * self._ratio).as_integer_ratio()
-        assert r[1] == 1, 'Not enough precision'
-        return r[0]
     
     def _encrypt_object(self, obj: Any) -> str:
         bytes_dump = pickle.dumps(obj)

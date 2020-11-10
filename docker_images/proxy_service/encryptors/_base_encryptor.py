@@ -13,6 +13,7 @@ class _BaseEncryptor(NodeVisitor):
                 initialization_vector=b'\x00' * 16
             )
         )
+        self._float_converting_ratio = 2 ** 50
         self._padder_factory = padding.PKCS7(8 * len(key))
         self._ope_cipher = OPE(ope_key, in_range=ValueRange(0, 2**60 - 1), out_range=ValueRange(0, 2**64 - 1))
 
@@ -33,7 +34,11 @@ class _BaseEncryptor(NodeVisitor):
 
     def generic_visit(self, node: Node, visited_children: tuple):
         return ''.join(visited_children) or node.text
-
-
-if __name__ == '__main__':
-    pass
+    
+    def _float_to_int(self, value: float) -> int:
+        r = (value * self._float_converting_ratio).as_integer_ratio()
+        assert r[1] == 1, 'Not enough precision'
+        return r[0]
+    
+    def _int_to_float(self, value: int) -> float:
+        return value / self._float_converting_ratio
