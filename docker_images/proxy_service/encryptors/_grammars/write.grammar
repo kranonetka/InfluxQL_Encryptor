@@ -18,7 +18,7 @@ field_set            = field (',' field)*
 field                = field_key '=' field_value
 field_key            = identifier ''
 field_value          = int_lit / float_lit / bool_lit / quoted_string
-timestamp            = ('+' / '-')? ((~'[1-9]' digit*) / digit)
+timestamp            = sign? integer
 identifier           = letter (letter / digit)*
 letter               = ascii_letter / '_'
 digit                = ~'[0-9]'
