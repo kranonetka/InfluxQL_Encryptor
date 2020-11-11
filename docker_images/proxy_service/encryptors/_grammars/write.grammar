@@ -13,14 +13,12 @@ quoted_string        = '"' ~'[^\n"]*' '"'
 tag_set              = tag (',' tag)*
 tag                  = tag_key '=' tag_value
 tag_key              = identifier ''
-tag_value            = string_lit ''
+tag_value            = identifier ''
 field_set            = field (',' field)*
 field                = field_key '=' field_value
 field_key            = identifier ''
 field_value          = int_lit / float_lit / bool_lit / quoted_string
 timestamp            = sign? integer
-identifier           = letter (letter / digit)*
-letter               = ascii_letter / '_'
+identifier           = ~'[^=, ]+'
 digit                = ~'[0-9]'
-ascii_letter         = ~'[a-z]'i
-ws                   = ~'\s'
+ws                   = ' '
