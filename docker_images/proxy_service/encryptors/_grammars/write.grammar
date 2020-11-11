@@ -1,7 +1,7 @@
 lines                = line ('\n' line)*
 line                 = measurement (',' tag_set)? ws field_set (ws timestamp)?
 measurement          = identifier ''
-bool_lit             =  'true' / 't' /  'True'  / 'TRUE' / 'T' / 'false' / 'f'  / 'False' / 'FALSE' / 'F'
+bool_lit             = 'true' / 't' /  'True'  / 'TRUE' / 'T' / 'false' / 'f'  / 'False' / 'FALSE' / 'F'
 float_lit            = sign? (integer ('.' digit* (exp sign integer)?)?)
 int_lit              = sign? integer 'i'
 integer              = (~r'[1-9]' digit+) / digit
