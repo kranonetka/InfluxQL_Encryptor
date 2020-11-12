@@ -71,14 +71,6 @@ def write():
 
     encrypted_data = write_encryptor.parse(data).encode()
 
-    # type_info = {
-    #     "db": database,
-    #     'measurement': data.split(',')[0],
-    #     'field_types': write_encryptor.types
-    # }
-    #
-    # print(type_info)
-
     response = requests.post(f'http://{INFLUX_HOST}:{INFLUX_PORT}/write', params=params, data=encrypted_data)
     return response.content, response.status_code, response.headers.items()
 
