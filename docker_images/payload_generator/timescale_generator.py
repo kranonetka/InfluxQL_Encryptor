@@ -2,6 +2,7 @@ import socket
 
 import psutil
 import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 HOST = '127.0.0.1'
 PORT = '5432'
@@ -9,12 +10,23 @@ USERNAME = 'postgres'
 PASSWORD = 'password'
 DATABASE = 'tutorial'
 
-conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD, dbname=DATABASE)
+
+def create_db():
+    conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD)
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
+    cur.execute(f"DROP DATABASE IF EXISTS {DATABASE}")
+    cur.execute(f"CREATE DATABASE {DATABASE};")
+    cur.execute(f"")
+    conn.commit()
+    cur.close()
 
 
 def create_table():
+    conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD, dbname=DATABASE)
     cur = conn.cursor()
-    cur.execute("DROP TABLE laptop_meas")
+    cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
+    cur.execute("DROP TABLE IF EXISTS laptop_meas")
     query_create_sensordata_table = """CREATE TABLE laptop_meas (
                                               time TIMESTAMPTZ NOT NULL,
                                               hostname VARCHAR(256),
@@ -30,7 +42,9 @@ def create_table():
 
 
 def main():
+    create_db()
     create_table()
+    conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD, dbname=DATABASE)
     cur = conn.cursor()
     payload_tpl = "INSERT INTO laptop_meas (time, hostname, cpu_percent, cpu_freq, memory_used) VALUES (now(), %s, %s, %s, %s);"
     while True:
