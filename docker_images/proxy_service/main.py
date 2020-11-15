@@ -1,8 +1,11 @@
+import os
 from itertools import islice, cycle
 
+import psycopg2
 import requests
-from encryptors import QueryEncryptor, WriteEncryptor
+from encryptors import QueryEncryptor, WriteEncryptor, WriteVisitor
 from flask import Flask, request
+from helpers import *
 
 for env_var in {'INFLUXDB_HOST', 'INFLUXDB_PORT'}:
     if env_var not in os.environ:
@@ -11,6 +14,12 @@ for env_var in {'INFLUXDB_HOST', 'INFLUXDB_PORT'}:
 INFLUX_HOST = os.environ["INFLUXDB_HOST"]
 INFLUX_PORT = os.environ["INFLUXDB_PORT"]
 FLASK_PORT = os.environ.get('FLASK_PORT')
+
+POSTGRES_HOST = '127.0.0.1'
+POSTGRES_PORT = '5432'
+POSTGRES_USERNAME = 'postgres'
+POSTGRES_PASSWORD = 'password'
+POSTGRES_DATABASE = 'tutorial'
 
 app = Flask(__name__)
 
@@ -69,10 +78,21 @@ def write():
     data = data.lstrip(' ')  # First character from influx client is space
     data = data.rstrip('\n')  # Last character from influx client is newline char
 
-    encrypted_data = write_encryptor.parse(data).encode()
+    # encrypted_data = write_encryptor.parse(data).encode()
 
-    response = requests.post(f'http://{INFLUX_HOST}:{INFLUX_PORT}/write', params=params, data=encrypted_data)
-    return response.content, response.status_code, response.headers.items()
+    info = WriteVisitor().parse(data)
+    query, data = get_query_and_data(info)
+
+    conn = psycopg2.connect(host=POSTGRES_HOST, port=POSTGRES_PORT, user=POSTGRES_USERNAME,
+                            password=POSTGRES_PASSWORD, dbname=POSTGRES_DATABASE)
+    cur = conn.cursor()
+    cur.execute(query, data)
+    print(query, data)
+    conn.commit()
+
+    # response = requests.post(f'http://{INFLUX_HOST}:{INFLUX_PORT}/write', params=params, data=encrypted_data)
+    # return response.content, response.status_code, response.headers.items()
+    return 'hello'
 
 
 if __name__ == '__main__':

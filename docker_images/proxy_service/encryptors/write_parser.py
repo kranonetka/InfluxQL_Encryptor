@@ -1,6 +1,13 @@
-from _base_encryptor import _BaseEncryptor
-from _grammars import write_grammar
+import psycopg2
+from ._base_encryptor import _BaseEncryptor
+from ._grammars import write_grammar
 from parsimonious.nodes import Node
+
+HOST = '127.0.0.1'
+PORT = '5432'
+USERNAME = 'postgres'
+PASSWORD = 'password'
+DATABASE = 'tutorial'
 
 
 class WriteVisitor(_BaseEncryptor):
@@ -28,12 +35,38 @@ class WriteVisitor(_BaseEncryptor):
         return self.__dict__
 
 
+def get_query_and_data(info):
+    table_name = info['measurement']
+    tags_keys = ','.join(info['tags'].keys())
+    fields_keys = ','.join(info['fields'].keys())
+    number_of_values = len(info['tags']) + len(info['fields'])
+    data = (*info['tags'].values(), *info['fields'].values())
+    query = f"INSERT INTO {table_name} ({tags_keys},{fields_keys},time) " \
+            f"VALUES ({'%s,' * number_of_values}now())"
+    return query, data
+
+
 def main():
-    data = "cpu_load_short,host=server01,region=us-west value=0.64 1434055562000000000"
+    data = "cpu_load_short,host=server01,region=us-west value=2"
     wp = WriteVisitor()
     info = wp.parse(data)
-    query = f"INSERT INTO {info['measurement']} ({','.join(info['tags'].keys())},{','.join(info['fields'].keys())},time) " \
-            f"VALUES ({','.join(info['tags'].values())},{','.join(info['fields'].values())},{info['time']})"
+
+    conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD, dbname=DATABASE)
+    cur = conn.cursor()
+    cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
+    cur.execute(f"DROP TABLE IF EXISTS {info['measurement']}")
+    query_create_sensordata_table = f"""CREATE TABLE {info['measurement']} (
+                                              time TIMESTAMPTZ NOT NULL,
+                                              host VARCHAR(256),
+                                              region VARCHAR(256),
+                                              value DOUBLE PRECISION
+                                              );"""
+    query_create_sensordata_hypertable = f"SELECT create_hypertable('{info['measurement']}', 'time');"
+    cur.execute(query_create_sensordata_table)
+    cur.execute(query_create_sensordata_hypertable)
+    query, data = get_query_and_data(info)
+    cur.execute(query, data)
+    conn.commit()
     print(query)
 
 

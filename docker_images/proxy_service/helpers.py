@@ -25,3 +25,13 @@ def init_db():
     )
     """
     cursor.execute(create_table)
+
+
+def get_query_and_data(info):
+    table_name = info['measurement']
+    tags_keys = ','.join(info['tags'].keys())
+    fields_keys = ','.join(info['fields'].keys())
+    number_of_values = len(info['tags']) + len(info['fields'])
+    data = (*info['tags'].values(), *info['fields'].values())
+    query = f"INSERT INTO {table_name} ({tags_keys},{fields_keys},time) VALUES ({'%s,' * number_of_values}now())"
+    return query, data
