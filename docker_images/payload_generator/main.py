@@ -12,7 +12,7 @@ write_url = f'http://{os.environ["TARGET_HOST"]}:{os.environ["TARGET_PORT"]}/wri
 
 if __name__ == '__main__':
     payload_tpl = f'laptop_meas,hostname={socket.gethostname()} ' \
-                  'cpu_percent={cpu_percent},cpu_freq={cpu_freq},memory_used={memory_used}i'
+                  'cpu_percent={cpu_percent},cpu_freq={cpu_freq},memory_used={memory_used}'
     print(payload_tpl)
    
     requests.post(query_url, params=dict(q='CREATE DATABASE laptop'))

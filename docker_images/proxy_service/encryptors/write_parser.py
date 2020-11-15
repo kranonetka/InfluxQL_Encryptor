@@ -1,7 +1,8 @@
 import psycopg2
+from parsimonious.nodes import Node
+
 from ._base_encryptor import _BaseEncryptor
 from ._grammars import write_grammar
-from parsimonious.nodes import Node
 
 HOST = '127.0.0.1'
 PORT = '5432'
@@ -21,6 +22,7 @@ class WriteVisitor(_BaseEncryptor):
 
     def visit_measurement(self, node: Node, visited_children: tuple):
         self.measurement = node.text
+        return node.text
 
     def visit_tag(self, node: Node, visited_children: tuple):
         self.tags[node.children[0].text] = node.children[2].text

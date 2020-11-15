@@ -7,19 +7,22 @@ from encryptors import QueryEncryptor, WriteEncryptor, WriteVisitor
 from flask import Flask, request
 from helpers import *
 
-for env_var in {'INFLUXDB_HOST', 'INFLUXDB_PORT'}:
+for env_var in {'INFLUXDB_HOST', 'INFLUXDB_PORT',
+                'FLASK_PORT',
+                'POSTGRES_HOST', 'POSTGRES_PORT',
+                'POSTGRES_USERNAME', 'POSTGRES_PASSWORD',
+                'POSTGRES_DATABASE'}:
     if env_var not in os.environ:
         raise RuntimeError(f'Missing environment variable {env_var}')
 
 INFLUX_HOST = os.environ["INFLUXDB_HOST"]
 INFLUX_PORT = os.environ["INFLUXDB_PORT"]
-FLASK_PORT = os.environ.get('FLASK_PORT')
-
-POSTGRES_HOST = '127.0.0.1'
-POSTGRES_PORT = '5432'
-POSTGRES_USERNAME = 'postgres'
-POSTGRES_PASSWORD = 'password'
-POSTGRES_DATABASE = 'tutorial'
+FLASK_PORT = os.environ['FLASK_PORT']
+POSTGRES_HOST = os.environ["POSTGRES_HOST"]
+POSTGRES_PORT = os.environ["POSTGRES_PORT"]
+POSTGRES_USERNAME = os.environ["POSTGRES_USERNAME"]
+POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
+POSTGRES_DATABASE = os.environ["POSTGRES_DATABASE"]
 
 app = Flask(__name__)
 
