@@ -9,9 +9,6 @@ def set_type(db, meas, field_key, field_type):
     connection.commit()
 
 
-# def get_type():
-
-
 def init_db():
     connection = sqlite3.connect("types.db")
     cursor = connection.cursor()

@@ -55,17 +55,14 @@ def main():
 
     conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD, dbname=DATABASE)
     cur = conn.cursor()
-    cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
-    cur.execute(f"DROP TABLE IF EXISTS {info['measurement']}")
-    query_create_sensordata_table = f"""CREATE TABLE {info['measurement']} (
+    query_create_sensordata_table = f"""CREATE TABLE IF NOT EXISTS {info['measurement']} (
                                               time TIMESTAMPTZ NOT NULL,
                                               host VARCHAR(256),
                                               region VARCHAR(256),
                                               value DOUBLE PRECISION
                                               );"""
     query_create_sensordata_hypertable = f"SELECT create_hypertable('{info['measurement']}', 'time');"
-    cur.execute(query_create_sensordata_table)
-    cur.execute(query_create_sensordata_hypertable)
+    cur.execute(query_create_sensordata_table, query_create_sensordata_hypertable)
     query, data = get_query_and_data(info)
     cur.execute(query, data)
     conn.commit()
