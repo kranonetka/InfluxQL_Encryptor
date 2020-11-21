@@ -1,0 +1,10 @@
+{
+  "tutorial": {
+    "laptop_meas": {
+      "hostname": "string",
+      "cpu_percent": "float",
+      "cpu_freq": "float",
+      "memory_used": "int"
+    }
+  }
+}

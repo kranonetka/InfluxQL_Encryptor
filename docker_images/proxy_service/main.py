@@ -3,8 +3,9 @@ from itertools import islice, cycle
 
 import psycopg2
 import requests
-from encryptors import QueryEncryptor, WriteEncryptor, WriteVisitor
 from flask import Flask, request
+
+from encryptors import QueryEncryptor, WriteEncryptor, WriteVisitor
 from helpers import *
 
 for env_var in {'INFLUXDB_HOST', 'INFLUXDB_PORT',
@@ -56,20 +57,37 @@ def query():
     params = request.args.to_dict()
     headers = request.headers
 
-    # query_plain = params.get("q")
-    # print(f"Plain query: {query_plain}")
-    # query_encrypted = encrypt_query(query_plain)
-    # print(f"Encrypted query: {query_encrypted}")
-    # params["q"] = query_encrypted
+    query_plain = params.get("q")
 
     if request.method == 'GET':
-        # SELECT, SHOW
-        response = requests.get(f'http://{INFLUX_HOST}:{INFLUX_PORT}/query', params=params, headers=headers)
-        return response.text, response.status_code
-    elif request.method == 'POST':
-        # ALTER CREATE DELETE DROP GRANT KILL REVOKE
-        response = requests.post(f'http://{INFLUX_HOST}:{INFLUX_PORT}/query', params=params)
-        return response.text, response.status_code
+
+        if "SHOW RETENTION POLICIES" in query_plain:
+            db_name = query_plain.split(" ")[-1].strip('"')
+            if db_is_exists_in_postgres(db_name):
+                return {"results": [{"statement_id": 0, "series": [
+                    {"columns": ["name", "duration", "shardGroupDuration", "replicaN", "default"],
+                     "values": [["autogen", "0s", "168h0m0s", 1, True]]}]}]}
+            else:
+                return {"results": [{"statement_id": 0, "error": f"database not found: {db_name}"}]}
+
+        if "SHOW MEASUREMENTS" in query_plain:
+            db_name = params.get("db")
+            tables = get_tables_from_postgres(db_name)
+            return {"results": [{"statement_id": 0, "series": [
+                {"name": "measurements", "columns": ["name"], "values": [*tables]}]}]}
+
+        if "SHOW FIELD KEYS FROM" in query_plain:
+            db_name = params.get("db")
+            table = query_plain.split(" ")[-1].strip('"')
+
+            field_keys = get_field_keys(db_name, table)
+
+            return {"results": [{"statement_id": 0, "series": [
+                {"name": "laptop_meas", "columns": ["fieldKey", "fieldType"],
+                 "values": field_keys}]}]}
+
+    print("AAA")
+    return "AAA"
 
 
 @app.route('/write', methods=["POST"])
