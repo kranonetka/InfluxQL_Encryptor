@@ -46,7 +46,7 @@ FROM
     "laptop_meas"
 WHERE
     ("hostname" = '694d42a595f2')
-    AND time >= now() - 5m
+    AND time >= now() - 5m and time <= 1605680700000ms
 GROUP BY
     time(200ms)
     fill(null)"""
@@ -61,6 +61,16 @@ GROUP BY
 # GROUP BY
 #     time(200ms)
 #     fill(null)"""
+#     query = """SELECT
+#         mean("memory_used")
+#     FROM
+#         "laptop_meas"
+#     WHERE
+#         ("hostname" = '8d89770d7eb1')
+#         AND time >= 1605680400000ms and time <= 1605680700000ms
+#     GROUP BY
+#         time(200ms)
+#         fill(null)"""
     
     print(query)
     print(visitor.parse(query))
