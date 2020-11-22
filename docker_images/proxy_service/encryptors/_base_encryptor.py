@@ -46,5 +46,5 @@ class _BaseEncryptor(NodeVisitor):
     def _int_to_float(self, value: int) -> float:
         return value / self._float_converting_ratio
     
-    def generic_visit(self, node: Node, visited_children: tuple):
-        return ''.join(visited_children) or node.text
+    def generic_visit(self, node: Node, visited_children: list):
+        return visited_children or node
