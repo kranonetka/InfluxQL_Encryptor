@@ -14,7 +14,7 @@ if __name__ == '__main__':
     payload_tpl = f'laptop_meas,hostname={socket.gethostname()} ' \
                   'cpu_percent={cpu_percent},cpu_freq={cpu_freq},memory_used={memory_used}i'
     print(payload_tpl)
-   
+
     requests.post(query_url, params=dict(q='CREATE DATABASE laptop'))
     params = dict(db='laptop')
     while True:

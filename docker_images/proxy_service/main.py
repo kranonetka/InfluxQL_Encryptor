@@ -1,7 +1,6 @@
 import os
 from itertools import islice, cycle
 
-import psycopg2
 import requests
 from flask import Flask, request
 
@@ -26,6 +25,9 @@ POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 POSTGRES_DATABASE = os.environ["POSTGRES_DATABASE"]
 
 app = Flask(__name__)
+
+conn = psycopg2.connect(host=POSTGRES_HOST, port=POSTGRES_PORT, user=POSTGRES_USERNAME,
+                        password=POSTGRES_PASSWORD, dbname=POSTGRES_DATABASE)
 
 key = bytes(islice(cycle(b'key'), 0, 32))
 write_encryptor = WriteEncryptor(key)
@@ -56,34 +58,29 @@ def ping():
 def query():
     params = request.args.to_dict()
     headers = request.headers
-
+    db_name = params.get("db")
     query_plain = params.get("q")
 
     if request.method == 'GET':
+        qe = query_encryptor.parse(query_plain)
 
-        if "SHOW RETENTION POLICIES" in query_plain:
-            db_name = query_plain.split(" ")[-1].strip('"')
-            if db_is_exists_in_postgres(db_name):
+        if qe["action"] == "show retention policies":
+            if db_is_exists_in_postgres(qe["database"]):
                 return {"results": [{"statement_id": 0, "series": [
                     {"columns": ["name", "duration", "shardGroupDuration", "replicaN", "default"],
                      "values": [["autogen", "0s", "168h0m0s", 1, True]]}]}]}
             else:
-                return {"results": [{"statement_id": 0, "error": f"database not found: {db_name}"}]}
+                return {"results": [{"statement_id": 0, "error": f"database not found: {qe['database']}"}]}
 
-        if "SHOW MEASUREMENTS" in query_plain:
-            db_name = params.get("db")
+        if qe["action"] == "show measurements":
             tables = get_tables_from_postgres(db_name)
             return {"results": [{"statement_id": 0, "series": [
                 {"name": "measurements", "columns": ["name"], "values": [*tables]}]}]}
 
-        if "SHOW FIELD KEYS FROM" in query_plain:
-            db_name = params.get("db")
-            table = query_plain.split(" ")[-1].strip('"')
-
-            field_keys = get_field_keys(db_name, table)
-
+        if qe["action"] == "show field keys":
+            field_keys = get_field_keys(db_name, qe['measurement'])
             return {"results": [{"statement_id": 0, "series": [
-                {"name": "laptop_meas", "columns": ["fieldKey", "fieldType"],
+                {"name": qe['measurement'], "columns": ["fieldKey", "fieldType"],
                  "values": field_keys}]}]}
 
     print("AAA")
@@ -99,21 +96,20 @@ def write():
     data = data.lstrip(' ')  # First character from influx client is space
     data = data.rstrip('\n')  # Last character from influx client is newline char
 
-    # encrypted_data = write_encryptor.parse(data).encode()
-
     info = WriteVisitor().parse(data)
-    query, data = get_query_and_data(info)
+    encryped_info = encrypt_fields(info, database)
+    print(info)
+    print(encryped_info)
 
-    conn = psycopg2.connect(host=POSTGRES_HOST, port=POSTGRES_PORT, user=POSTGRES_USERNAME,
-                            password=POSTGRES_PASSWORD, dbname=POSTGRES_DATABASE)
+    query, data = get_query_and_data(info)
+    print(query, data)
+
     cur = conn.cursor()
     cur.execute(query, data)
-    print(query, data)
     conn.commit()
+    cur.close()
 
-    # response = requests.post(f'http://{INFLUX_HOST}:{INFLUX_PORT}/write', params=params, data=encrypted_data)
-    # return response.content, response.status_code, response.headers.items()
-    return 'hello'
+    return 'posted'
 
 
 if __name__ == '__main__':

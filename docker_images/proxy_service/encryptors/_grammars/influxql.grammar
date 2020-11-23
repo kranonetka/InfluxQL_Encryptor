@@ -1,7 +1,7 @@
 query                        = statement
 statement                    = create_user_stmt / drop_database_stmt / select_stmt / create_database_stmt / show_databases_stmt / show_retention_policies_stmt / show_field_keys_stmt / show_measurements_stmt
 show_retention_policies_stmt = 'SHOW RETENTION POLICIES' ws+ on_clause
-on_clause                    = 'ON' ws+ db_name
+on_clause                    = 'on' ws+ db_name
 show_measurements_stmt       = 'SHOW MEASUREMENTS' ws+ limit_clause
 limit_clause                 = 'LIMIT' ws+ integer
 show_field_keys_stmt         = 'SHOW FIELD KEYS' ws+ from_clause
