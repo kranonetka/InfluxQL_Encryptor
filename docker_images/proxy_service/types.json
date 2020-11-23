@@ -1,0 +1,22 @@
+{
+  "tutorial": {
+    "laptop_meas": {
+      "hostname": {
+        "type": "string",
+        "operations": ["="]
+      },
+      "cpu_percent": {
+        "type": "float",
+        "operations": ["+"]
+      },
+      "cpu_freq": {
+        "type": "float",
+        "operations": ["+"]
+      },
+      "memory_used": {
+        "type": "int",
+        "operations": [">"]
+      }
+    }
+  }
+}
