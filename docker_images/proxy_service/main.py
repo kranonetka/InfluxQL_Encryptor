@@ -32,6 +32,7 @@ conn = psycopg2.connect(host=POSTGRES_HOST, port=POSTGRES_PORT, user=POSTGRES_US
 key = bytes(islice(cycle(b'key'), 0, 32))
 write_encryptor = WriteEncryptor(key)
 query_encryptor = QueryEncryptor(key)
+wv = WriteVisitor(key)
 
 
 @app.route('/')
@@ -96,7 +97,7 @@ def write():
     data = data.lstrip(' ')  # First character from influx client is space
     data = data.rstrip('\n')  # Last character from influx client is newline char
 
-    info = WriteVisitor().parse(data)
+    info = wv.parse(data)[0]
     encryped_info = encrypt_fields(info, database)
     print(info)
     print(encryped_info)

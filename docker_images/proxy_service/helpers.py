@@ -1,8 +1,9 @@
 import json
 import sqlite3
 from itertools import chain
-from pyope.ope import OPE, ValueRange
+
 import psycopg2
+from pyope.ope import OPE, ValueRange
 
 PG_HOST = '127.0.0.1'
 PG_PORT = '5432'
@@ -10,10 +11,11 @@ PG_USERNAME = 'postgres'
 PG_PASSWORD = 'password'
 
 ope_cipher = OPE(
-            key=b"a"*32,
-            in_range=ValueRange(-1125899906842624000, 1125899906842624000),
-            out_range=ValueRange(-9223372036854775808, 9223372036854775807)
-        )
+    key=b"a" * 32,
+    in_range=ValueRange(-1125899906842624000, 1125899906842624000),
+    out_range=ValueRange(-9223372036854775808, 9223372036854775807)
+)
+
 
 def set_type(db, meas, field_key, field_type):
     connection = sqlite3.connect("types.db")
@@ -66,7 +68,6 @@ def get_field_keys(db_name, table):
 
 
 def encrypt(data, type, operations):
-
     return f"encrypted_{data}_{type}_as_{operations}"
 
 
@@ -89,8 +90,10 @@ def encrypt_fields(payload_info, database):
         operation = types.get(database, {}).get(payload_info["measurement"], {}).get(field_key, {}).get('operations')
         encrypted_fields[field_key] = encrypt(payload_info["fields"][field_key], type_of_field, operation)
     encrypted_payload_info["fields"] = encrypted_fields
-
-    encrypted_payload_info["time"] = payload_info["time"]
+    if "time" in payload_info:
+        encrypted_payload_info["time"] = payload_info["time"]
+    else:
+        encrypted_payload_info["time"] = None
     return encrypted_payload_info
 
 
