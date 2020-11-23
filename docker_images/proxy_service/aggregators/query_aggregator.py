@@ -10,14 +10,18 @@ def _datetime_to_iso8601(dt: datetime):
 
 class QueryAggregator:
     @staticmethod
-    def assemble(tokens: dict):
+    def assemble(tokens: dict) -> str:
         if tokens.get('action') == 'select':
-            return QueryAggregator._assemble_select(tokens)
+            return QueryAggregator._assemble_select_query(tokens)
         else:
             raise NotImplementedError()
+        # TODO:
+        #  * show_retention_policies_stmt
+        #  * show_field_keys_stmt
+        #  * show_measurements_stmt
     
     @staticmethod
-    def _assemble_select(tokens: dict) -> str:
+    def _assemble_select_query(tokens: dict) -> str:
         query = ['SELECT']
         
         selectors = []
@@ -30,6 +34,7 @@ class QueryAggregator:
         
         field_key = tokens['field_key']
         if (aggregation := tokens.get('aggregation')) is not None:
+            # TODO: mean -> avg and so on
             selectors.append(f'{aggregation}({field_key})')
         else:
             selectors.append(field_key)

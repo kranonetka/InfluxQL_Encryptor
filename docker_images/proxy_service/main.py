@@ -1,14 +1,16 @@
 import os
-from itertools import islice, cycle
 
+import psycopg2
 import requests
 from flask import Flask, request
 
-from encryptors import QueryEncryptor, WriteEncryptor, WriteVisitor
-from helpers import *
+from aggregators import QueryAggregator, WriteAggregator
+from helpers import db_is_exists_in_postgres, get_field_keys, get_query_and_data, get_tables_from_postgres, \
+    encrypt_fields
+from parsers import QueryParser, WriteParser
+from postgres_connector import PostgresConnector
 
-for env_var in {'INFLUXDB_HOST', 'INFLUXDB_PORT',
-                'FLASK_PORT',
+for env_var in {'FLASK_PORT',
                 'POSTGRES_HOST', 'POSTGRES_PORT',
                 'POSTGRES_USERNAME', 'POSTGRES_PASSWORD',
                 'POSTGRES_DATABASE'}:
@@ -29,10 +31,19 @@ app = Flask(__name__)
 conn = psycopg2.connect(host=POSTGRES_HOST, port=POSTGRES_PORT, user=POSTGRES_USERNAME,
                         password=POSTGRES_PASSWORD, dbname=POSTGRES_DATABASE)
 
-key = bytes(islice(cycle(b'key'), 0, 32))
-write_encryptor = WriteEncryptor(key)
-query_encryptor = QueryEncryptor(key)
-wv = WriteVisitor(key)
+query_encryptor = QueryParser()
+write_parser = WriteParser()
+
+query_aggregator = QueryAggregator()
+write_aggregator = WriteAggregator()
+
+postgres_connector = PostgresConnector(
+    host=POSTGRES_HOST,
+    port=POSTGRES_PORT,
+    user=POSTGRES_USERNAME,
+    password=POSTGRES_PASSWORD,
+    db=POSTGRES_DATABASE
+)
 
 
 @app.route('/')
@@ -58,13 +69,13 @@ def ping():
 @app.route('/query', methods=["POST", "GET"])
 def query():
     params = request.args.to_dict()
-    headers = request.headers
+    # headers = request.headers
     db_name = params.get("db")
     query_plain = params.get("q")
-
+    
     if request.method == 'GET':
         qe = query_encryptor.parse(query_plain)
-
+        
         if qe["action"] == "show retention policies":
             if db_is_exists_in_postgres(qe["database"]):
                 return {"results": [{"statement_id": 0, "series": [
@@ -72,44 +83,49 @@ def query():
                      "values": [["autogen", "0s", "168h0m0s", 1, True]]}]}]}
             else:
                 return {"results": [{"statement_id": 0, "error": f"database not found: {qe['database']}"}]}
-
+        
         if qe["action"] == "show measurements":
             tables = get_tables_from_postgres(db_name)
             return {"results": [{"statement_id": 0, "series": [
                 {"name": "measurements", "columns": ["name"], "values": [*tables]}]}]}
-
+        
         if qe["action"] == "show field keys":
             field_keys = get_field_keys(db_name, qe['measurement'])
             return {"results": [{"statement_id": 0, "series": [
                 {"name": qe['measurement'], "columns": ["fieldKey", "fieldType"],
                  "values": field_keys}]}]}
-
+    
     print("AAA")
     return "AAA"
 
 
 @app.route('/write', methods=["POST"])
 def write():
+    # a = parse()
+    # b = encrypt(a)
+    # c = assemble(b)
+    # postgres_exeute(c)
+    
     params = request.args
-    headers = request.headers
+    # headers = request.headers
     database = params.get("db")
     data = request.get_data().decode()  # bytes
     data = data.lstrip(' ')  # First character from influx client is space
     data = data.rstrip('\n')  # Last character from influx client is newline char
-
-    info = wv.parse(data)[0]
+    
+    info = write_parser.parse(data)[0]
     encryped_info = encrypt_fields(info, database)
     print(info)
     print(encryped_info)
-
+    
     query, data = get_query_and_data(info)
     print(query, data)
-
+    
     cur = conn.cursor()
     cur.execute(query, data)
     conn.commit()
     cur.close()
-
+    
     return 'posted'
 
 

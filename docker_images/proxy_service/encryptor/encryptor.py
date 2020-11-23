@@ -1,13 +1,11 @@
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from parsimonious.nodes import NodeVisitor, Node
 from pyope.ope import OPE, ValueRange
 
 
-class _BaseEncryptor(NodeVisitor):
+class Encryptor:
     def __init__(self, key: bytes, float_converting_ratio=2 ** 50):
-        super().__init__()
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
             mode=modes.CBC(
@@ -23,7 +21,7 @@ class _BaseEncryptor(NodeVisitor):
             out_range=ValueRange(-9223372036854775808, 9223372036854775807)
         )
     
-    def _encrypt_bytes(self, payload: bytes) -> bytes:
+    def encrypt_bytes(self, payload: bytes) -> bytes:
         padder = self._padder_factory.padder()
         
         padded = padder.update(payload) + padder.finalize()
@@ -31,20 +29,17 @@ class _BaseEncryptor(NodeVisitor):
         encryptor = self._cipher_factory.encryptor()
         return encryptor.update(padded) + encryptor.finalize()
     
-    def _decrypt_bytes(self, payload: bytes) -> bytes:
+    def decrypt_bytes(self, payload: bytes) -> bytes:
         decryptor = self._cipher_factory.decryptor()
         decrypted = decryptor.update(payload) + decryptor.finalize()
         
         unpadder = self._padder_factory.unpadder()
         return unpadder.update(decrypted) + unpadder.finalize()
     
-    def _float_to_int(self, value: float) -> int:
+    def float_to_int(self, value: float) -> int:
         r = (value * self._float_converting_ratio).as_integer_ratio()
         assert r[1] == 1, 'Not enough precision'
         return r[0]
     
-    def _int_to_float(self, value: int) -> float:
+    def int_to_float(self, value: int) -> float:
         return value / self._float_converting_ratio
-    
-    def generic_visit(self, node: Node, visited_children: list):
-        return visited_children or node

@@ -1,5 +1,4 @@
 import json
-import sqlite3
 from itertools import chain
 
 import psycopg2
@@ -15,29 +14,6 @@ ope_cipher = OPE(
     in_range=ValueRange(-1125899906842624000, 1125899906842624000),
     out_range=ValueRange(-9223372036854775808, 9223372036854775807)
 )
-
-
-def set_type(db, meas, field_key, field_type):
-    connection = sqlite3.connect("types.db")
-    cursor = connection.cursor()
-    insert = f"INSERT OR IGNORE INTO types (db, meas, field_key, field_type) VALUES (?,?,?,?);"
-    cursor.execute(insert, (db, meas, field_key, field_type))
-    connection.commit()
-
-
-def init_db():
-    connection = sqlite3.connect("types.db")
-    cursor = connection.cursor()
-    create_table = """
-    CREATE TABLE IF NOT EXISTS types(
-    db text,
-    meas text,
-    field_key text,
-	field_type text,
-	UNIQUE(db, meas, field_key, field_type)
-    )
-    """
-    cursor.execute(create_table)
 
 
 def db_is_exists_in_postgres(db_name):
@@ -63,7 +39,7 @@ def get_tables_from_postgres(db_name):
 def get_field_keys(db_name, table):
     with open("types.json", "r") as file:
         types: dict = json.load(file)
-
+    
     return [[key, value['type']] for key, value in types.get(db_name, {}).get(table, {}).items()]
 
 
@@ -84,7 +60,7 @@ def encrypt_fields(payload_info, database):
         operation = types.get(database, {}).get(payload_info["measurement"], {}).get(tag_key, {}).get('operations')
         encrypted_tags[tag_key] = encrypt(payload_info["tags"][tag_key], type_of_tag, operation)
     encrypted_payload_info["tags"] = encrypted_tags
-
+    
     for field_key in payload_info["fields"].keys():
         type_of_field = types.get(database, {}).get(payload_info["measurement"], {}).get(field_key, {}).get('type')
         operation = types.get(database, {}).get(payload_info["measurement"], {}).get(field_key, {}).get('operations')

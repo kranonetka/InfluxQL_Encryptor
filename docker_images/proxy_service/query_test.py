@@ -1,4 +1,4 @@
-from encryptors import QueryEncryptor
+from parsers import QueryParser
 from aggregators import QueryAggregator
 
 
@@ -37,7 +37,7 @@ GROUP BY
 
 if __name__ == '__main__':
     key = b'\x00' * 32
-    visitor = QueryEncryptor(key=key)
+    visitor = QueryParser(key=key)
     
     index = 1
     
@@ -46,4 +46,3 @@ if __name__ == '__main__':
     print(queries[index])
     print('============')
     print(QueryAggregator.assemble(tokens))
-
