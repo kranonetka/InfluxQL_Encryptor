@@ -53,7 +53,6 @@ class QueryEncryptor(_BaseEncryptor):
         where_clause         = 'WHERE' ws+ lpar quoted_identifier ws* comp_op ws* string_lit rpar (ws* logical_op ws* where_time)?
         where_time           = time_condition (ws* logical_op ws* time_condition)?
         """
-        #print(node)
         conditions = []
         
         tag_key = node.children[3].children[1].text
@@ -62,12 +61,11 @@ class QueryEncryptor(_BaseEncryptor):
         conditions.append((tag_key, tag_op, tag_value))
         
         time_conditions = visited_children[-1]
-        print(type(time_conditions))
+        
         if not isinstance(time_conditions, Node):  # if latest token present (returns as list)
             conditions += time_conditions[-1][-1]  # Getting result of visit_where_time
-        
-        print(conditions)
-        return {"conditions": conditions}
+            
+        return {"where_conditions": conditions}
     
     def visit_where_time(self, node: Node, visited_children: list):
         """
@@ -90,15 +88,37 @@ class QueryEncryptor(_BaseEncryptor):
         return 'time', op, dt
 
     def visit_group_by_clause(self, node: Node, visited_children: list):
-        return self.generic_visit(node, visited_children)  # TODO
+        """
+        group_by_clause      = 'GROUP BY' ws+ dimension (ws+ 'fill' lpar fill_option rpar)?
+        """
+        return {'group_by': visited_children[2]['dimension']}
+    
+    def visit_dimension(self, node: Node, visited_children: list):
+        dimension: Node = node.children[0]
+        if dimension.expr_name == 'duration':
+            return {'dimension': _parse_duration(dimension.children[2].children[0])}
+        else:  # measurement
+            return {'dimension': node.children[0].children[0].children[0].children[0].children[1].text}
 
     def visit_select_stmt(self, node: Node, visited_children: list):
         """
         select_stmt          = 'SELECT' ws+ field ws+ from_clause (ws+ where_clause)? (ws+ group_by_clause)?
         """
-        from_ = visited_children[4]
-        aggregation = visited_children[2]
-        return {'action': 'select', **from_, **aggregation}
+        params = {
+            **visited_children[4],  # from
+            **visited_children[2]  # field and aggregation
+        }
+        
+        where_tokens = visited_children[-2]
+        if not isinstance(where_tokens, Node):  # if present
+            conditions = where_tokens[-1][-1]
+            params.update(conditions)
+            
+        group_by_tokens = visited_children[-1]
+        if not isinstance(group_by_tokens, Node):
+            params.update(group_by_tokens[-1][-1])
+        
+        return {'action': 'select', **params}
     
     def visit_from_clause(self, node: Node, visited_children: list):
         return {'measurement': node.children[2].children[0].children[0].children[1].text}
