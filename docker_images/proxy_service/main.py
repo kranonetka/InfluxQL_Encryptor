@@ -3,8 +3,7 @@ import pprint
 
 from flask import Flask, request, Response
 
-from helpers import db_is_exists_in_postgres, get_field_keys, get_query_and_data, get_tables_from_postgres, \
-    encrypt_fields
+from helpers import get_field_keys, get_query_and_data, encrypt_fields
 from parsers import QueryParser, WriteParser
 from postgres_connector import PostgresConnector
 from token_aggregators import QueryAggregator, WriteAggregator
@@ -63,7 +62,7 @@ def query():
         qe = query_encryptor.parse(query_plain)
         
         if qe["action"] == "show retention policies":
-            if db_is_exists_in_postgres(qe["database"]):
+            if postgres_connector.is_db_exists(qe["database"]):
                 return {"results": [{"statement_id": 0, "series": [
                     {"columns": ["name", "duration", "shardGroupDuration", "replicaN", "default"],
                      "values": [["autogen", "0s", "168h0m0s", 1, True]]}]}]}
@@ -71,7 +70,7 @@ def query():
                 return {"results": [{"statement_id": 0, "error": f"database not found: {qe['database']}"}]}
         
         if qe["action"] == "show measurements":
-            tables = get_tables_from_postgres(db_name)
+            tables = postgres_connector.get_tables_from_database(db_name)
             return {"results": [{"statement_id": 0, "series": [
                 {"name": "measurements", "columns": ["name"], "values": [*tables]}]}]}
         

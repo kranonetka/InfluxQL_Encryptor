@@ -1,7 +1,5 @@
 import json
 import os
-from itertools import chain
-
 from pyope.ope import OPE, ValueRange
 
 from postgres_connector import PostgresConnector
@@ -28,22 +26,6 @@ ope_cipher = OPE(
     in_range=ValueRange(-1125899906842624000, 1125899906842624000),
     out_range=ValueRange(-9223372036854775808, 9223372036854775807)
 )
-
-
-def db_is_exists_in_postgres(db_name: str) -> bool:
-    query = 'SELECT datname FROM pg_database;'
-    return db_name in postgres_connector.execute(query, use_db=False)
-
-
-def get_tables_from_postgres(db_name):
-    query = '''
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_schema = 'public'
-    ORDER BY table_name;
-    '''
-    
-    return chain.from_iterable(postgres_connector.execute(query))
 
 
 def get_field_keys(db_name, table):

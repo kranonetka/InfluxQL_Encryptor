@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2.extensions import cursor
 from contextlib import contextmanager
+from itertools import chain
 
 
 class PostgresConnector:
@@ -43,3 +44,33 @@ class PostgresConnector:
             cur.execute(query, params)
             if cur.description:
                 return cur.fetchall()
+
+    def is_db_exists(self, db_name: str) -> bool:
+        """
+        Проверяет, создана ли БД в СУБД
+        
+        :param db_name: Имя БД
+        :return: True, если существует, Else иначе
+        """
+        query = 'SELECT datname FROM pg_database;'
+        with self.cursor(use_db=False) as cur:
+            cur.execute(query)
+            return db_name in chain.from_iterable(cur)
+
+    def get_tables_from_database(self, db_name: str) -> tuple:
+        """
+        Возвращает имена таблиц, имеющихся в БД db_name
+        
+        :param db_name: Имя БД
+        :return: Имена таблиц
+        """
+        query = '''
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        ORDER BY table_name;
+        '''
+        
+        with self.cursor() as cur:
+            cur.execute(query)
+            return tuple(chain.from_iterable(cur))
