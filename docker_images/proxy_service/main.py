@@ -1,41 +1,25 @@
 import os
+import pprint
 
-import psycopg2
-import requests
-from flask import Flask, request
+from flask import Flask, request, Response
 
-from aggregators import QueryAggregator, WriteAggregator
 from helpers import db_is_exists_in_postgres, get_field_keys, get_query_and_data, get_tables_from_postgres, \
     encrypt_fields
 from parsers import QueryParser, WriteParser
 from postgres_connector import PostgresConnector
+from token_aggregators import QueryAggregator, WriteAggregator
 
-for env_var in {'FLASK_PORT',
-                'POSTGRES_HOST', 'POSTGRES_PORT',
-                'POSTGRES_USERNAME', 'POSTGRES_PASSWORD',
-                'POSTGRES_DATABASE'}:
-    if env_var not in os.environ:
-        raise RuntimeError(f'Missing environment variable {env_var}')
-
-INFLUX_HOST = os.environ["INFLUXDB_HOST"]
-INFLUX_PORT = os.environ["INFLUXDB_PORT"]
-FLASK_PORT = os.environ['FLASK_PORT']
-POSTGRES_HOST = os.environ["POSTGRES_HOST"]
-POSTGRES_PORT = os.environ["POSTGRES_PORT"]
-POSTGRES_USERNAME = os.environ["POSTGRES_USERNAME"]
-POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
-POSTGRES_DATABASE = os.environ["POSTGRES_DATABASE"]
+try:
+    FLASK_PORT = os.environ['FLASK_PORT']
+    POSTGRES_HOST = os.environ['POSTGRES_HOST']
+    POSTGRES_PORT = os.environ['POSTGRES_PORT']
+    POSTGRES_USERNAME = os.environ['POSTGRES_USERNAME']
+    POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+    POSTGRES_DATABASE = os.environ['POSTGRES_DATABASE']
+except KeyError as key:
+    raise RuntimeError(f'{key} missing in environment')
 
 app = Flask(__name__)
-
-conn = psycopg2.connect(host=POSTGRES_HOST, port=POSTGRES_PORT, user=POSTGRES_USERNAME,
-                        password=POSTGRES_PASSWORD, dbname=POSTGRES_DATABASE)
-
-query_encryptor = QueryParser()
-write_parser = WriteParser()
-
-query_aggregator = QueryAggregator()
-write_aggregator = WriteAggregator()
 
 postgres_connector = PostgresConnector(
     host=POSTGRES_HOST,
@@ -45,25 +29,27 @@ postgres_connector = PostgresConnector(
     db=POSTGRES_DATABASE
 )
 
+query_encryptor = QueryParser()
+write_parser = WriteParser()
+
+query_aggregator = QueryAggregator()
+write_aggregator = WriteAggregator()
+
 
 @app.route('/')
 def index():
-    return f'INFLUXDB_HOST={INFLUX_HOST}, INFLUXDB_PORT={INFLUX_HOST}'
+    return f'<pre>{pprint.pformat(globals(), indent=4)}</pre>'
 
 
 @app.route('/debug', defaults={'path': ''})
 @app.route('/debug/<path:path>', methods=["GET"])
 def debug(path):
-    params = request.args.to_dict()
-    headers = request.headers
-    response = requests.get(f'http://{INFLUX_HOST}:{INFLUX_PORT}/debug/{path}', params=params, headers=headers)
-    return response.content
+    return 'ok'  # TODO
 
 
 @app.route('/ping', methods=['GET'])
 def ping():
-    response = requests.get(f'http://{INFLUX_HOST}:{INFLUX_PORT}/ping')
-    return response.content, response.status_code, response.headers.items()
+    return 'ok'  # TODO
 
 
 @app.route('/query', methods=["POST", "GET"])
@@ -109,24 +95,18 @@ def write():
     params = request.args
     # headers = request.headers
     database = params.get("db")
-    data = request.get_data().decode()  # bytes
-    data = data.lstrip(' ')  # First character from influx client is space
-    data = data.rstrip('\n')  # Last character from influx client is newline char
+    data = request.get_data().strip().decode()
     
-    info = write_parser.parse(data)[0]
-    encryped_info = encrypt_fields(info, database)
-    print(info)
+    single_line_tokens = write_parser.parse(data)[0]
+    encryped_info = encrypt_fields(single_line_tokens, database)
+    print(single_line_tokens)
     print(encryped_info)
     
-    query, data = get_query_and_data(info)
+    query, data = get_query_and_data(single_line_tokens)
     print(query, data)
     
-    cur = conn.cursor()
-    cur.execute(query, data)
-    conn.commit()
-    cur.close()
-    
-    return 'posted'
+    postgres_connector.execute(query, data)
+    return Response(status=204)
 
 
 if __name__ == '__main__':
