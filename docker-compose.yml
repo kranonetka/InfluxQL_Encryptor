@@ -2,11 +2,6 @@ version: "3"
 
 
 services:
-  influxdb:
-    image: influxdb:1.8-alpine
-    ports:
-    - 8086:8086
-
   timescale:
     build: docker_images/timescale
     environment:
@@ -21,17 +16,16 @@ services:
     ports:
     - 5000:5000
     links:
-      - influxdb
       - timescale
     environment:
       - POSTGRES_HOST=timescale
-      - POSTGRES_PORT=8086
+      - POSTGRES_PORT=5432
       - POSTGRES_USERNAME=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DATABASE=laptop
       - FLASK_PORT=5000
     depends_on:
-      - influxdb
+      - timescale
 
   payload_generator:
     build: docker_images/payload_generator
@@ -41,7 +35,6 @@ services:
       - TARGET_HOST=proxy
       - TARGET_PORT=5000
     links:
-      - influxdb
       - proxy
 
   grafana:
@@ -51,6 +44,5 @@ services:
       ports:
       - 8092:8092
       links:
-      - influxdb
       - proxy
       - timescale
