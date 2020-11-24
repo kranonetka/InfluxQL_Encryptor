@@ -1,13 +1,27 @@
 import json
+import os
 from itertools import chain
 
-import psycopg2
 from pyope.ope import OPE, ValueRange
 
-PG_HOST = '127.0.0.1'
-PG_PORT = '5432'
-PG_USERNAME = 'postgres'
-PG_PASSWORD = 'password'
+from postgres_connector import PostgresConnector
+
+try:
+    POSTGRES_HOST = os.environ['POSTGRES_HOST']
+    POSTGRES_PORT = os.environ['POSTGRES_PORT']
+    POSTGRES_USERNAME = os.environ['POSTGRES_USERNAME']
+    POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+    POSTGRES_DATABASE = os.environ['POSTGRES_DATABASE']
+except KeyError as key:
+    raise RuntimeError(f'{key} missing in environment')
+
+postgres_connector = PostgresConnector(
+    host=POSTGRES_HOST,
+    port=POSTGRES_PORT,
+    user=POSTGRES_USERNAME,
+    password=POSTGRES_PASSWORD,
+    db=POSTGRES_DATABASE
+)
 
 ope_cipher = OPE(
     key=b"a" * 32,
@@ -16,24 +30,20 @@ ope_cipher = OPE(
 )
 
 
-def db_is_exists_in_postgres(db_name):
-    connection = psycopg2.connect(host=PG_HOST, port=PG_PORT, user=PG_USERNAME, password=PG_PASSWORD)
-    cur = connection.cursor()
-    cur.execute("SELECT datname FROM pg_database;")
-    return db_name in chain.from_iterable(cur)
+def db_is_exists_in_postgres(db_name: str) -> bool:
+    query = 'SELECT datname FROM pg_database;'
+    return db_name in postgres_connector.execute(query, use_db=False)
 
 
 def get_tables_from_postgres(db_name):
-    connection = psycopg2.connect(host=PG_HOST, port=PG_PORT, user=PG_USERNAME, password=PG_PASSWORD, dbname=db_name)
-    cur = connection.cursor()
-    cur.execute("""
+    query = '''
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = 'public'
     ORDER BY table_name;
-    """)
-    tables = cur.fetchall()
-    return chain.from_iterable(tables)
+    '''
+    
+    return chain.from_iterable(postgres_connector.execute(query))
 
 
 def get_field_keys(db_name, table):
