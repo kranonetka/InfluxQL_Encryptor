@@ -30,7 +30,7 @@ services:
   payload_generator:
     build: docker_images/payload_generator
     depends_on:
-      - influxdb
+      - proxy
     environment:
       - TARGET_HOST=proxy
       - TARGET_PORT=5000
