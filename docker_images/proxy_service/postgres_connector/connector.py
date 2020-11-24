@@ -1,7 +1,8 @@
-import psycopg2
-from psycopg2.extensions import cursor
 from contextlib import contextmanager
 from itertools import chain
+
+import psycopg2
+from psycopg2.extensions import cursor
 
 
 class PostgresConnector:
@@ -13,7 +14,7 @@ class PostgresConnector:
             password=password,
             dbname=db
         )
-        
+    
     @contextmanager
     def cursor(self, use_db=True):  # type: (bool) -> cursor
         """
@@ -27,10 +28,10 @@ class PostgresConnector:
             conn = psycopg2.connect(**self._credentials)
         else:
             conn = psycopg2.connect(**dict(self._credentials, dbname=None))
-            
+        
         with conn, conn.cursor() as cur:
             yield cur
-        
+    
     def execute(self, query, params=None, use_db=True):
         """
         Выполнить SQL запрос с параметрами и вернуть **все** строки, если запрос должен что-то вернуть
@@ -44,7 +45,7 @@ class PostgresConnector:
             cur.execute(query, params)
             if cur.description:
                 return cur.fetchall()
-
+    
     def is_db_exists(self, db_name: str) -> bool:
         """
         Проверяет, создана ли БД в СУБД
@@ -56,7 +57,7 @@ class PostgresConnector:
         with self.cursor(use_db=False) as cur:
             cur.execute(query)
             return db_name in chain.from_iterable(cur)
-
+    
     def get_tables_from_database(self, db_name: str) -> tuple:
         """
         Возвращает имена таблиц, имеющихся в БД db_name
