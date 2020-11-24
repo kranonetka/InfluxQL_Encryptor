@@ -15,7 +15,7 @@ if __name__ == '__main__':
                   'cpu_percent={cpu_percent},cpu_freq={cpu_freq},memory_used={memory_used}i'
     print(payload_tpl)
 
-    requests.post(query_url, params=dict(q='CREATE DATABASE laptop'))
+    # requests.post(query_url, params=dict(q='CREATE DATABASE laptop'))
     params = dict(db='laptop')
     while True:
         payload = payload_tpl.format(

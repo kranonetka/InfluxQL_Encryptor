@@ -7,15 +7,28 @@ services:
     ports:
     - 8086:8086
 
+  timescale:
+    build: docker_images/timescale
+    environment:
+    - POSTGRES_PASSWORD=password
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=laptop
+    ports:
+    - 5432:5432
+
   proxy:
     build: docker_images/proxy_service
     ports:
     - 5000:5000
     links:
       - influxdb
+      - timescale
     environment:
-      - INFLUXDB_HOST=influxdb
-      - INFLUXDB_PORT=8086
+      - POSTGRES_HOST=timescale
+      - POSTGRES_PORT=8086
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DATABASE=laptop
       - FLASK_PORT=5000
     depends_on:
       - influxdb
@@ -25,8 +38,8 @@ services:
     depends_on:
       - influxdb
     environment:
-      - TARGET_HOST=influxdb
-      - TARGET_PORT=8086
+      - TARGET_HOST=proxy
+      - TARGET_PORT=5000
     links:
       - influxdb
       - proxy
@@ -40,3 +53,4 @@ services:
       links:
       - influxdb
       - proxy
+      - timescale
