@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extensions import cursor
 from contextlib import contextmanager
 
 
@@ -13,17 +14,32 @@ class PostgresConnector:
         )
         
     @contextmanager
-    def _get_cursor(self):
-        connection = psycopg2.connect(**self._credentials)
-        cursor = connection.cursor()
-        try:
-            yield cursor
-        finally:
-            cursor.close()
-            connection.close()
+    def cursor(self, use_db=True):  # type: (bool) -> cursor
+        """
+        Контекстный менеджер для получения курсора. По выходу из контекста все транзакции будут автоматически
+        закоммичены, а соединение закрыто
         
-    def execute(self, query, params=None):
-        with self._get_cursor() as cursor:
-            cursor.execute(query, params)
-            if cursor.description:
-                return cursor.fetchall()
+        :param use_db: Использовать ли базу данных при подключении
+        :return: Курсор для взаимодействия с СУБД
+        """
+        if use_db:
+            conn = psycopg2.connect(**self._credentials)
+        else:
+            conn = psycopg2.connect(**dict(self._credentials, dbname=None))
+            
+        with conn, conn.cursor() as cur:
+            yield cur
+        
+    def execute(self, query, params=None, use_db=True):
+        """
+        Выполнить SQL запрос с параметрами и вернуть **все** строки, если запрос должен что-то вернуть
+        
+        :param query: Запрос
+        :param params: Параметры запроса (опционально)
+        :param use_db: Использовать ли базу данных при подключении
+        :return: Результат выборки, если запрос должен что-то вернуть
+        """
+        with self.cursor(use_db=use_db) as cur:
+            cur.execute(query, params)
+            if cur.description:
+                return cur.fetchall()
