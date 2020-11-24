@@ -24,7 +24,33 @@ class WriteParser(NodeVisitor):
         return {'tags': tags}
     
     def visit_field(self, node: Node, visited_children: tuple):
-        return {node.children[0].text: node.children[2].text}
+        """
+        field                = field_key equal field_value
+        field_value          = int_lit / float_lit / bool_lit / quoted_string
+        """
+        field_key = node.children[0].text
+        
+        field_value_node: Node = node.children[-1].children[0]
+        
+        field_value_expr = field_value_node.expr_name
+        
+        if field_value_expr in {'int_lit', 'float_lit'}:
+            sign = field_value_node.children[0].text
+            value = field_value_node.children[1].text
+            signed_value = sign + value
+            if field_value_expr == 'int_lit':
+                field_value = int(signed_value)
+            else:  # float_lit
+                field_value = float(signed_value)
+        elif field_value_expr == 'bool_lit':
+            if field_value_node.text.lower() in {'true', 't'}:
+                field_value = True
+            else:
+                field_value = False
+        else:  # quoted_string
+            field_value = field_value_node.children[1].text
+        
+        return {field_key: field_value}
     
     def visit_field_set(self, node: Node, visited_children: list):
         fields = dict()
