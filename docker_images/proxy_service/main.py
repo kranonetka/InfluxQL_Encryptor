@@ -81,7 +81,7 @@ def query():
                 {"name": qe['measurement'], "columns": ["fieldKey", "fieldType"],
                  "values": field_keys}]}]}
     
-    print("AAA")
+    # print("AAA")
     return "AAA"
 
 
@@ -99,11 +99,11 @@ def write():
     
     single_line_tokens = write_parser.parse(data)[0]
     encryped_info = encrypt_fields(single_line_tokens, database)
-    print(single_line_tokens)
-    print(encryped_info)
+    # print(single_line_tokens)
+    # print(encryped_info)
     
     query, data = get_query_and_data(single_line_tokens)
-    print(query, data)
+    # print(query, data)
     
     postgres_connector.execute(query, data)
     return Response(status=204)
