@@ -36,7 +36,7 @@ class QueryParser(NodeVisitor):
     grammar = influxql_grammar
     
     def visit_show_retention_policies_stmt(self, node: Node, visited_children: list):
-        return {'action': 'show retention policies', 'database': node.children[2].children[2].text}
+        return {'action': 'show retention policies', 'database': node.children[2].children[2].text.strip('"')}
     
     def visit_show_measurements_stmt(self, node: Node, visited_children: list):
         return {'action': 'show measurements', 'limit': node.children[2].children[2].text}
