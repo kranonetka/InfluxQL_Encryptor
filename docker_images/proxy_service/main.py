@@ -4,7 +4,7 @@ import pprint
 from flask import Flask, request, Response
 
 from helpers import get_field_keys
-from parsers import QueryParser, WriteParser
+from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
 from token_aggregators import QueryAggregator, WriteAggregator
 
@@ -31,9 +31,6 @@ postgres_connector = PostgresConnector(
 query_parser = QueryParser()
 write_parser = WriteParser()
 
-query_aggregator = QueryAggregator()
-write_aggregator = WriteAggregator()
-
 
 @app.route('/')
 def index():
@@ -55,28 +52,32 @@ def ping():
 def query():
     params = request.args.to_dict()
     db_name = params.get("db")
-    query_plain = params.get("q")
-
+    influxql_query = params.get("q")
+    
     if request.method == 'GET':
-        query = query_parser.parse(query_plain)
-
-        if query["action"] == "show retention policies":
-            if postgres_connector.is_db_exists(query["database"]):
+        tokens = query_parser.parse(influxql_query)
+        
+        postgres_query = QueryAggregator.assemble(tokens)
+        
+        result = postgres_connector.execute(query)
+        
+        if tokens["action"] == Action.SHOW_RETENTION_POLICIES:
+            if postgres_connector.is_db_exists(tokens["database"]):
                 return {"results": [{"statement_id": 0, "series": [
                     {"columns": ["name", "duration", "shardGroupDuration", "replicaN", "default"],
                      "values": [["autogen", "0s", "168h0m0s", 1, True]]}]}]}
             else:
-                return {"results": [{"statement_id": 0, "error": f"database not found: {query['database']}"}]}
-
-        if query["action"] == "show measurements":
-            tables = postgres_connector.get_tables_from_database(db_name)
+                return {"results": [{"statement_id": 0, "error": f"database not found: {tokens['database']}"}]}
+        
+        if tokens["action"] == Action.SHOW_MEASUREMENTS:
+            tables = postgres_connector.get_tables()
             return {"results": [{"statement_id": 0, "series": [
                 {"name": "measurements", "columns": ["name"], "values": [*tables]}]}]}
-
-        if query["action"] == "show field keys":
-            field_keys = get_field_keys(db_name, query['measurement'])
+        
+        if tokens["action"] == Action.SHOW_FIELD_KEYS:
+            field_keys = get_field_keys(db_name, tokens['measurement'])
             return {"results": [{"statement_id": 0, "series": [
-                {"name": query['measurement'], "columns": ["fieldKey", "fieldType"],
+                {"name": tokens['measurement'], "columns": ["fieldKey", "fieldType"],
                  "values": field_keys}]}]}
 
     # print("AAA")

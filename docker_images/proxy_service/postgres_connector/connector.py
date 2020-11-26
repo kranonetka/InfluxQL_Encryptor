@@ -58,20 +58,17 @@ class PostgresConnector:
             cur.execute(query)
             return db_name in chain.from_iterable(cur)
     
-    def get_tables_from_database(self, db_name: str) -> tuple:
+    def get_tables(self) -> tuple:
         """
-        Возвращает имена таблиц, имеющихся в БД db_name
+        Возвращает имена таблиц, имеющихся в БД контекста
         
-        :param db_name: Имя БД
         :return: Имена таблиц
         """
-        query = '''
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = 'public'
-        ORDER BY table_name;
-        '''
+        query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
         
         with self.cursor() as cur:
             cur.execute(query)
             return tuple(chain.from_iterable(cur))
+        
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'

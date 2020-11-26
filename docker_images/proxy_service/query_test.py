@@ -1,5 +1,5 @@
 from parsers import QueryParser
-from aggregators import QueryAggregator
+from token_aggregators import QueryAggregator
 
 
 queries = (
@@ -36,8 +36,7 @@ GROUP BY
 
 
 if __name__ == '__main__':
-    key = b'\x00' * 32
-    visitor = QueryParser(key=key)
+    visitor = QueryParser()
     
     index = 1
     

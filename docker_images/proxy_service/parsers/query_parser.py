@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from operator import sub, add
-
+from enum import Enum, auto
 from parsimonious.nodes import Node, NodeVisitor
 
 from ._grammars import influxql_grammar
@@ -32,30 +32,40 @@ def _parse_duration(duration_lit_node: Node) -> timedelta:
     return timedelta(seconds=duration)
 
 
+class Action(Enum):
+    SELECT = auto()
+    SHOW_MEASUREMENTS = auto()
+    SHOW_RETENTION_POLICIES = auto()
+    SHOW_FIELD_KEYS = auto()
+    DROP_DATABASE = auto()
+    CREATE_DATABASE = auto()
+    SHOW_DATABASES = auto()
+
+
 class QueryParser(NodeVisitor):
     grammar = influxql_grammar
     
     def visit_show_retention_policies_stmt(self, node: Node, visited_children: list):
-        return {'action': 'show retention policies', 'database': node.children[2].children[2].text.strip('"')}
+        return {'action': Action.SHOW_RETENTION_POLICIES, 'database': node.children[2].children[2].text.strip('"')}
     
     def visit_show_measurements_stmt(self, node: Node, visited_children: list):
-        return {'action': 'show measurements', 'limit': node.children[2].children[2].text}
+        return {'action': Action.SHOW_MEASUREMENTS, 'limit': int(node.children[2].children[2].text)}
     
     def visit_show_field_keys_stmt(self, node: Node, visited_children: list):
-        return {'action': 'show field keys',
+        return {'action': Action.SHOW_FIELD_KEYS,
                 'measurement': node.children[2].children[2].children[0].children[0].children[1].text}
     
     def visit_statement(self, node: Node, visited_children: list):
         return visited_children[0]
     
     def visit_drop_database_stmt(self, node: Node, visited_children: list):
-        return {'action': 'drop database', 'database': node.children[2].text}
+        return {'action': Action.DROP_DATABASE, 'database': node.children[2].text}
     
     def visit_create_database_stmt(self, node: Node, visited_children: list):
-        return {'action': 'create database', 'database': node.children[2].text}
+        return {'action': Action.CREATE_DATABASE, 'database': node.children[2].text}
     
     def visit_show_databases_stmt(self, node: Node, visited_children: list):
-        return {'action': 'show databases'}
+        return {'action': Action.SHOW_DATABASES}
     
     def visit_where_clause(self, node: Node, visited_children: list):
         """
@@ -127,7 +137,7 @@ class QueryParser(NodeVisitor):
         if not isinstance(group_by_tokens, Node):
             params.update(group_by_tokens[-1][-1])
         
-        return {'action': 'select', **params}
+        return {'action': Action.SELECT, **params}
     
     def visit_from_clause(self, node: Node, visited_children: list):
         return {'measurement': node.children[2].children[0].children[0].children[1].text}
