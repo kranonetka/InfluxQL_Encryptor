@@ -62,9 +62,18 @@ def query():
         
         result = postgres_connector.execute(postgres_query)
         
-        if tokens["action"] == Action.SELECT:
+        if tokens['action'] == Action.SELECT:
             res = ResultAggregator.assemble(result, tokens)
             return res
+        
+        elif tokens['action'] == Action.SHOW_FIELD_KEYS:
+            # TODO: TODO
+            pass
+        else:
+            # TODO
+            #  res = ResultAggregator.assemble(result, tokens)
+            #  return res
+            pass
         
         if tokens["action"] == Action.SHOW_RETENTION_POLICIES:
             if postgres_connector.is_db_exists(tokens["database"]):
@@ -84,25 +93,23 @@ def query():
             return {"results": [{"statement_id": 0, "series": [
                 {"name": tokens['measurement'], "columns": ["fieldKey", "fieldType"],
                  "values": field_keys}]}]}
-
-    # print("AAA")
-    return "AAA"
+        
+    return Response(status=404)
 
 
 @app.route('/write', methods=["POST"])
 def write():
-    # a = parse()
-    # b = encrypt(a)
-    # c = assemble(b)
-    # postgres_exeute(c)
+    payload = request.get_data().strip().decode()
+    
+    single_line_tokens = write_parser.parse(payload)[0]  # TODO: multiple lines (not only 1st)
+    
+    postgres_query, params = WriteAggregator.assemble(single_line_tokens)
 
-    data = request.get_data().strip().decode()
-    single_line_tokens = write_parser.parse(data)[0]
-    query, data = WriteAggregator.assemble(single_line_tokens)
-
-    postgres_connector.execute(query, data)
+    postgres_connector.execute(postgres_query, params)
+    
     return Response(status=204)
 
 
 if __name__ == '__main__':
+    # TODO: Create UDF ope_sum
     app.run(debug=True, host='0.0.0.0', port=FLASK_PORT)

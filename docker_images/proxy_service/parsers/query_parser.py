@@ -45,6 +45,29 @@ class Action(Enum):
 class QueryParser(NodeVisitor):
     grammar = influxql_grammar
     
+    def visit_statement(self, node: Node, visited_children: list):
+        return visited_children[0]
+    
+    def visit_select_stmt(self, node: Node, visited_children: list):
+        """
+        select_stmt          = 'SELECT' ws+ field ws+ from_clause (ws+ where_clause)? (ws+ group_by_clause)?
+        """
+        params = {
+            **visited_children[4],  # from
+            **visited_children[2]  # field and aggregation
+        }
+    
+        where_tokens = visited_children[-2]
+        if not isinstance(where_tokens, Node):  # if present
+            conditions = where_tokens[-1][-1]
+            params.update(conditions)
+    
+        group_by_tokens = visited_children[-1]
+        if not isinstance(group_by_tokens, Node):
+            params.update(group_by_tokens[-1][-1])
+    
+        return {'action': Action.SELECT, **params}
+    
     def visit_show_retention_policies_stmt(self, node: Node, visited_children: list):
         return {'action': Action.SHOW_RETENTION_POLICIES, 'database': node.children[2].children[2].text.strip('"')}
     
@@ -54,9 +77,6 @@ class QueryParser(NodeVisitor):
     def visit_show_field_keys_stmt(self, node: Node, visited_children: list):
         return {'action': Action.SHOW_FIELD_KEYS,
                 'measurement': node.children[2].children[2].children[0].children[0].children[1].text}
-    
-    def visit_statement(self, node: Node, visited_children: list):
-        return visited_children[0]
     
     def visit_drop_database_stmt(self, node: Node, visited_children: list):
         return {'action': Action.DROP_DATABASE, 'database': node.children[2].text}
@@ -118,26 +138,6 @@ class QueryParser(NodeVisitor):
             return {'dimension': _parse_duration(dimension.children[2].children[0])}
         else:  # measurement
             return {'dimension': node.children[0].children[0].children[0].children[0].children[1].text}
-    
-    def visit_select_stmt(self, node: Node, visited_children: list):
-        """
-        select_stmt          = 'SELECT' ws+ field ws+ from_clause (ws+ where_clause)? (ws+ group_by_clause)?
-        """
-        params = {
-            **visited_children[4],  # from
-            **visited_children[2]  # field and aggregation
-        }
-        
-        where_tokens = visited_children[-2]
-        if not isinstance(where_tokens, Node):  # if present
-            conditions = where_tokens[-1][-1]
-            params.update(conditions)
-        
-        group_by_tokens = visited_children[-1]
-        if not isinstance(group_by_tokens, Node):
-            params.update(group_by_tokens[-1][-1])
-        
-        return {'action': Action.SELECT, **params}
     
     def visit_from_clause(self, node: Node, visited_children: list):
         return {'measurement': node.children[2].children[0].children[0].children[1].text}
