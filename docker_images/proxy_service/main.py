@@ -7,6 +7,7 @@ from helpers import get_field_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
 from token_aggregators import QueryAggregator, WriteAggregator
+from result_aggregator import ResultAggregator
 
 try:
     FLASK_PORT = os.environ['FLASK_PORT']
@@ -59,7 +60,11 @@ def query():
         
         postgres_query = QueryAggregator.assemble(tokens)
         
-        result = postgres_connector.execute(query)
+        result = postgres_connector.execute(postgres_query)
+        
+        if tokens["action"] == Action.SELECT:
+            res = ResultAggregator.assemble(result, tokens)
+            return res
         
         if tokens["action"] == Action.SHOW_RETENTION_POLICIES:
             if postgres_connector.is_db_exists(tokens["database"]):
@@ -68,12 +73,12 @@ def query():
                      "values": [["autogen", "0s", "168h0m0s", 1, True]]}]}]}
             else:
                 return {"results": [{"statement_id": 0, "error": f"database not found: {tokens['database']}"}]}
-        
+
         if tokens["action"] == Action.SHOW_MEASUREMENTS:
             tables = postgres_connector.get_tables()
             return {"results": [{"statement_id": 0, "series": [
                 {"name": "measurements", "columns": ["name"], "values": [*tables]}]}]}
-        
+
         if tokens["action"] == Action.SHOW_FIELD_KEYS:
             field_keys = get_field_keys(db_name, tokens['measurement'])
             return {"results": [{"statement_id": 0, "series": [

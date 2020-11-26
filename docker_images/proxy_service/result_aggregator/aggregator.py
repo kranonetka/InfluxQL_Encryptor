@@ -1,5 +1,22 @@
 from typing import List
 from parsers import Action
+from decimal import Decimal
+from datetime import datetime
+
+
+def normalize(item):
+    if isinstance(item, Decimal):
+        return float(item)
+    elif isinstance(item, datetime):
+        return int(item.timestamp() * 1000)
+    elif isinstance(item, int):
+        return item
+    else:
+        raise TypeError(f'{item}')
+    
+    
+def normalize_seq(seq):
+    return list(map(normalize, seq))
 
 
 class ResultAggregator:
@@ -15,5 +32,20 @@ class ResultAggregator:
 
     @staticmethod
     def _assemble_select(query_result: List[tuple], tokens: dict):
-        print(query_result, tokens)
-        return {}
+        return {
+            "results": [
+                {
+                    "statement_id": 0,
+                    "series": [
+                        {
+                            "name": tokens.get('measurement'),
+                            "columns": [
+                                "time",
+                                tokens.get('aggregation', tokens['field_key'])
+                            ],
+                            "values": list(map(normalize_seq, query_result))
+                        }
+                    ]
+                }
+            ]
+        }
