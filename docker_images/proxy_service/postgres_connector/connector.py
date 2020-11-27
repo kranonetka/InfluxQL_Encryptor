@@ -46,29 +46,5 @@ class PostgresConnector:
             if cur.description:
                 return cur.fetchall()
     
-    def is_db_exists(self, db_name: str) -> bool:
-        """
-        Проверяет, создана ли БД в СУБД
-        
-        :param db_name: Имя БД
-        :return: True, если существует, Else иначе
-        """
-        query = 'SELECT datname FROM pg_database;'
-        with self.cursor(use_db=False) as cur:
-            cur.execute(query)
-            return db_name in chain.from_iterable(cur)
-    
-    def get_tables(self) -> tuple:
-        """
-        Возвращает имена таблиц, имеющихся в БД контекста
-        
-        :return: Имена таблиц
-        """
-        query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
-        
-        with self.cursor() as cur:
-            cur.execute(query)
-            return tuple(chain.from_iterable(cur))
-        
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.__dict__})'
+        return f'{self.__class__.__name__}({", ".join(f"{key}={value}" for key, value in self.__dict__.values())})'

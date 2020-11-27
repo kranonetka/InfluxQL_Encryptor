@@ -6,6 +6,6 @@ WORKDIR service
 RUN python -m pip install --upgrade pip && python -m pip install pipenv
 
 ADD . / ./
-RUN pipenv install --system --verbose
+RUN pipenv install --system
 
 CMD python main.py

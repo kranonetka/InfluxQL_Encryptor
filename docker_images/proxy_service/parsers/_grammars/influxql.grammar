@@ -1,5 +1,18 @@
 query                        = statement
-statement                    = create_user_stmt / drop_database_stmt / select_stmt / create_database_stmt / show_databases_stmt / show_retention_policies_stmt / show_field_keys_stmt / show_measurements_stmt
+
+statement                    = create_user_stmt /
+                                drop_database_stmt /
+                                select_stmt /
+                                create_database_stmt /
+                                show_databases_stmt /
+                                show_retention_policies_stmt /
+                                show_field_keys_stmt /
+                                show_measurements_stmt /
+                                show_tag_keys_stmt /
+                                show_tag_values_stmt
+
+show_tag_values_stmt         = 'SHOW TAG VALUES' ws+ from_clause ws+ with_tag_clause
+show_tag_keys_stmt           = 'SHOW TAG KEYS' ws+ from_clause
 show_retention_policies_stmt = 'SHOW RETENTION POLICIES' ws+ on_clause
 on_clause                    = 'on' ws+ db_name
 show_measurements_stmt       = 'SHOW MEASUREMENTS' ws+ limit_clause
@@ -27,6 +40,7 @@ measurements                 = measurement (comma measurement)*
 measurement_name             = identifier gap
 policy_name                  = identifier gap
 ws_where                     = ws+ where_clause
+with_tag_clause              = 'WITH KEY' ws* equal ws* tag_key
 where_clause                 = 'WHERE' ws+ lpar quoted_identifier ws* comp_op ws* string_lit rpar (ws* logical_op ws* where_time)?
 where_time                   = time_condition (ws* logical_op ws* time_condition)?
 time_condition               = time_word ws* comp_op ws* (duration_lit / (special ws* arithmetical_op ws* duration_lit))
@@ -37,6 +51,7 @@ time_interval                = duration_lit gap
 offset_interval              = duration_lit gap
 dimensions                   = dimension (comma dimension)*
 fill_option                  = 'null' / 'none' / 'previous' / 'linear' / int_lit / float_lit
+tag_key                      = identifier gap
 user_name                    = identifier gap
 password                     = string_lit gap
 db_name                      = identifier gap

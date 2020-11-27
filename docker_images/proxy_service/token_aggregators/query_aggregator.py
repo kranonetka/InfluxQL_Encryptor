@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
+from typing import Tuple, Union
+
 from parsers import Action
+from collections import abc
 
 
 def _datetime_to_iso8601(dt: datetime):
@@ -16,24 +19,27 @@ _func_mapping = dict(
 
 class QueryAggregator:
     @staticmethod
-    def assemble(tokens: dict) -> str:
+    def assemble(tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
         action = tokens.get('action')
         if action == Action.SELECT:
             assembler = QueryAggregator._assemble_select
-            
+        
         elif action == Action.SHOW_RETENTION_POLICIES:
             assembler = QueryAggregator._assemble_show_retention_policies
-            
+        
         elif action == Action.SHOW_MEASUREMENTS:
             assembler = QueryAggregator._assemble_show_measurements
-            
+        
+        elif action == Action.SHOW_TAG_VALUES:
+            assembler = QueryAggregator._assemble_show_tag_values
+        
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(str(action))
         
         return assembler(tokens)
     
     @staticmethod
-    def _assemble_select(tokens: dict) -> str:
+    def _assemble_select(tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
         query = ['SELECT']
         
         selectors = []
@@ -74,17 +80,20 @@ class QueryAggregator:
         query.append(' AND '.join(where_conditions))
         
         query.append('GROUP BY 1 ORDER BY 1')
-            
-        return ' '.join(query)
+        
+        return ' '.join(query), None
     
     @staticmethod
-    def _assemble_show_measurements(tokens: dict) -> str:
+    def _assemble_show_measurements(tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
         query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
         if (limit := tokens.get('limit')) is not None:
             query += f' LIMIT {limit}'
-        return query
-
+        return query, None
+    
     @staticmethod
-    def _assemble_show_retention_policies(tokens: dict) -> str:
-        return 'SELECT datname FROM pg_database;'
-
+    def _assemble_show_retention_policies(tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
+        return 'SELECT datname FROM pg_database;', None
+    
+    @staticmethod
+    def _assemble_show_tag_values(tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
+        return f'SELECT DISTINCT %s, {tokens["tag_key"]} FROM {tokens["measurement"]}', [tokens["tag_key"]]

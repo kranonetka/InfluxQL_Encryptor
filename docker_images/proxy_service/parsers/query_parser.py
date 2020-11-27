@@ -40,6 +40,8 @@ class Action(Enum):
     DROP_DATABASE = auto()
     CREATE_DATABASE = auto()
     SHOW_DATABASES = auto()
+    SHOW_TAG_KEYS = auto()
+    SHOW_TAG_VALUES = auto()
 
 
 class QueryParser(NodeVisitor):
@@ -56,17 +58,42 @@ class QueryParser(NodeVisitor):
             **visited_children[4],  # from
             **visited_children[2]  # field and aggregation
         }
-    
+        
         where_tokens = visited_children[-2]
         if not isinstance(where_tokens, Node):  # if present
             conditions = where_tokens[-1][-1]
             params.update(conditions)
-    
+        
         group_by_tokens = visited_children[-1]
         if not isinstance(group_by_tokens, Node):
             params.update(group_by_tokens[-1][-1])
-    
+        
         return {'action': Action.SELECT, **params}
+    
+    def visit_show_tag_keys_stmt(self, node: Node, visited_children: list):
+        """
+        show_tag_keys_stmt           = 'SHOW TAG KEYS' ws+ from_clause
+        """
+        return {
+            'action': Action.SHOW_TAG_KEYS,
+            **visited_children[-1]  # 'measurement' key
+        }
+    
+    def visit_show_tag_values_stmt(self, node: Node, visited_children: list):
+        """
+        show_tag_values_stmt         = 'SHOW TAG VALUES' ws+ from_clause ws+ with_tag_clause
+        """
+        return {
+            'action': Action.SHOW_TAG_VALUES,
+            **visited_children[2],  # 'measurement' key
+            **visited_children[4]  # 'tag_key' key
+        }
+    
+    def visit_with_tag_clause(self, node: Node, visited_children: list):
+        """
+        with_tag_clause              = 'WITH KEY' ws* equal ws* tag_key
+        """
+        return {'tag_key': node.children[-1].text.strip('"')}
     
     def visit_show_retention_policies_stmt(self, node: Node, visited_children: list):
         return {'action': Action.SHOW_RETENTION_POLICIES, 'database': node.children[2].children[2].text.strip('"')}
@@ -152,6 +179,6 @@ class QueryParser(NodeVisitor):
         else:  # measurement
             field_key = field_node.children[0].children[0].children[0].children[1].text
             return {'field_key': field_key}
-        
+    
     def generic_visit(self, node: Node, visited_children: list):
         return visited_children or node

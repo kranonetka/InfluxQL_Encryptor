@@ -3,19 +3,27 @@
     "laptop_meas": {
       "hostname": {
         "type": "string",
-        "operations": ["="]
+        "operations": [
+          "="
+        ]
       },
       "cpu_percent": {
         "type": "float",
-        "operations": ["+"]
+        "operations": [
+          "+"
+        ]
       },
       "cpu_freq": {
         "type": "float",
-        "operations": ["+"]
+        "operations": [
+          "+"
+        ]
       },
       "memory_used": {
         "type": "int",
-        "operations": [">"]
+        "operations": [
+          ">"
+        ]
       }
     }
   }

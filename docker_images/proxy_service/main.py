@@ -1,3 +1,4 @@
+import json
 import os
 import pprint
 
@@ -51,48 +52,60 @@ def ping():
 
 @app.route('/query', methods=["POST", "GET"])
 def query():
-    params = request.args.to_dict()
-    db_name = params.get("db")
-    influxql_query = params.get("q")
-    
     if request.method == 'GET':
+        params = request.args.to_dict()
+        db_name = params.get("db")
+        influxql_query = params.get("q")
+        
         tokens = query_parser.parse(influxql_query)
         
-        postgres_query = QueryAggregator.assemble(tokens)
-        
-        result = postgres_connector.execute(postgres_query)
-        
-        if tokens['action'] == Action.SELECT:
-            res = ResultAggregator.assemble(result, tokens)
-            return res
-        
-        elif tokens['action'] == Action.SHOW_FIELD_KEYS:
-            # TODO: TODO
-            pass
-        else:
-            # TODO
-            #  res = ResultAggregator.assemble(result, tokens)
-            #  return res
-            pass
-        
-        if tokens["action"] == Action.SHOW_RETENTION_POLICIES:
-            if postgres_connector.is_db_exists(tokens["database"]):
-                return {"results": [{"statement_id": 0, "series": [
-                    {"columns": ["name", "duration", "shardGroupDuration", "replicaN", "default"],
-                     "values": [["autogen", "0s", "168h0m0s", 1, True]]}]}]}
-            else:
-                return {"results": [{"statement_id": 0, "error": f"database not found: {tokens['database']}"}]}
-
-        if tokens["action"] == Action.SHOW_MEASUREMENTS:
-            tables = postgres_connector.get_tables()
-            return {"results": [{"statement_id": 0, "series": [
-                {"name": "measurements", "columns": ["name"], "values": [*tables]}]}]}
-
         if tokens["action"] == Action.SHOW_FIELD_KEYS:
             field_keys = get_field_keys(db_name, tokens['measurement'])
-            return {"results": [{"statement_id": 0, "series": [
-                {"name": tokens['measurement'], "columns": ["fieldKey", "fieldType"],
-                 "values": field_keys}]}]}
+            return {
+                "results": [
+                    {
+                        "statement_id": 0,
+                        "series": [
+                            {
+                                "name": tokens['measurement'],
+                                "columns": [
+                                    "fieldKey",
+                                    "fieldType"
+                                ],
+                                "values": field_keys
+                            }
+                        ]
+                    }
+                ]
+            }
+        
+        elif tokens['action'] == Action.SHOW_TAG_KEYS:
+            with open('tags.json', 'r') as fp:
+                data = json.load(fp)
+            tags = data.get(db_name, {}).get(tokens['measurement'], [])
+            res = {
+                "results": [
+                    {
+                        "statement_id": 0,
+                        "series": [
+                            {
+                                "name": tokens['measurement'],
+                                "columns": [
+                                    "tagKey"
+                                ],
+                                "values": tags
+                            }
+                        ]
+                    }
+                ]
+            }
+            return res
+        
+        postgres_query, params = QueryAggregator.assemble(tokens)
+        
+        result = postgres_connector.execute(postgres_query, params)
+        
+        return ResultAggregator.assemble(result, tokens)
         
     return Response(status=404)
 
@@ -104,7 +117,7 @@ def write():
     single_line_tokens = write_parser.parse(payload)[0]  # TODO: multiple lines (not only 1st)
     
     postgres_query, params = WriteAggregator.assemble(single_line_tokens)
-
+    
     postgres_connector.execute(postgres_query, params)
     
     return Response(status=204)
