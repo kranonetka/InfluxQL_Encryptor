@@ -24,4 +24,7 @@ if __name__ == '__main__':
             cpu_freq=psutil.cpu_freq().current,
             memory_used=psutil.virtual_memory().used
         ).encode()
-        requests.post(write_url, params=params, data=payload)
+        try:
+            requests.post(write_url, params=params, data=payload)
+        except:
+            pass

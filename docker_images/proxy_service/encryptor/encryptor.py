@@ -1,3 +1,5 @@
+import base64
+
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -5,7 +7,7 @@ from pyope.ope import OPE, ValueRange
 
 
 class Encryptor:
-    def __init__(self, key: bytes, float_converting_ratio=2 ** 50):
+    def __init__(self, key: bytes, types, paillier_pub_key, paillier_priv_key, float_converting_ratio=2 ** 50):
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
             mode=modes.CBC(
@@ -17,29 +19,32 @@ class Encryptor:
         self._float_converting_ratio = float_converting_ratio
         self._ope_cipher = OPE(
             key=key,
-            in_range=ValueRange(-1125899906842624000, 1125899906842624000),
-            out_range=ValueRange(-9223372036854775808, 9223372036854775807)
+            in_range=ValueRange(0, 2 ** 64 - 1),
+            out_range=ValueRange(2 ** 64, 2 ** 128)
         )
-    
+        self.paillier_pub_key = paillier_pub_key
+        self.paillier_priv_key = paillier_priv_key
+        self.types = types
+
     def encrypt_bytes(self, payload: bytes) -> bytes:
         padder = self._padder_factory.padder()
-        
+
         padded = padder.update(payload) + padder.finalize()
-        
+
         encryptor = self._cipher_factory.encryptor()
-        return encryptor.update(padded) + encryptor.finalize()
-    
+        return base64.b64encode(encryptor.update(padded) + encryptor.finalize()).decode()
+
     def decrypt_bytes(self, payload: bytes) -> bytes:
         decryptor = self._cipher_factory.decryptor()
         decrypted = decryptor.update(payload) + decryptor.finalize()
-        
+
         unpadder = self._padder_factory.unpadder()
         return unpadder.update(decrypted) + unpadder.finalize()
-    
+
     def float_to_int(self, value: float) -> int:
         r = (value * self._float_converting_ratio).as_integer_ratio()
         assert r[1] == 1, 'Not enough precision'
         return r[0]
-    
+
     def int_to_float(self, value: int) -> float:
         return value / self._float_converting_ratio

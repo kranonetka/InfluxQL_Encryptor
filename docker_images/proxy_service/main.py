@@ -1,9 +1,12 @@
 import json
 import os
+import pickle
 import pprint
+from pathlib import Path
 
 from flask import Flask, request, Response
 
+from encryptor import WriteTokensEncryptor
 from helpers import get_field_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
@@ -29,9 +32,24 @@ postgres_connector = PostgresConnector(
     password=POSTGRES_PASSWORD,
     db=POSTGRES_DATABASE
 )
+with open("types.json", "r") as file:
+    types = json.load(file)
+
+_root = Path(__file__).parent
+
+with (_root / 'key_storage' / 'phe_public_key').open(mode='rb') as fp:
+    phe_public_key = pickle.load(fp)
+
+with (_root / 'key_storage' / 'phe_private_key').open(mode='rb') as fp:
+    phe_private_key = pickle.load(fp)
 
 query_parser = QueryParser()
 write_parser = WriteParser()
+token_encryptor = WriteTokensEncryptor(types=types,
+                                       float_converting_ratio=2 ** 50,
+                                       paillier_pub_key=phe_public_key,
+                                       paillier_priv_key=phe_private_key,
+                                       key=b"a" * 32)
 
 
 @app.route('/')
@@ -56,9 +74,9 @@ def query():
         params = request.args.to_dict()
         db_name = params.get("db")
         influxql_query = params.get("q")
-        
+
         tokens = query_parser.parse(influxql_query)
-        
+
         if tokens["action"] == Action.SHOW_FIELD_KEYS:
             field_keys = get_field_keys(db_name, tokens['measurement'])
             return {
@@ -78,7 +96,7 @@ def query():
                     }
                 ]
             }
-        
+
         elif tokens['action'] == Action.SHOW_TAG_KEYS:
             with open('tags.json', 'r') as fp:
                 data = json.load(fp)
@@ -100,26 +118,30 @@ def query():
                 ]
             }
             return res
-        
+
         postgres_query, params = QueryAggregator.assemble(tokens)
-        
+
         result = postgres_connector.execute(postgres_query, params)
-        
+
         return ResultAggregator.assemble(result, tokens)
-    
+
     return Response(status=404)
 
 
 @app.route('/write', methods=["POST"])
 def write():
     payload = request.get_data().strip().decode()
-    
+
     single_line_tokens = write_parser.parse(payload)[0]  # TODO: multiple lines (not only 1st)
-    
-    postgres_query, params = WriteAggregator.assemble(single_line_tokens)
-    
+
+    encrypted_single_line = token_encryptor.encrypt(single_line_tokens, db=request.args.get("db"))
+    print(encrypted_single_line)
+    postgres_query, params = WriteAggregator.assemble(encrypted_single_line)
+
+    # postgres_query, params = WriteAggregator.assemble(single_line_tokens)
+
     postgres_connector.execute(postgres_query, params)
-    
+
     return Response(status=204)
 
 
