@@ -13,7 +13,7 @@ class PostgresConnector:
             password=password,
             dbname=db
         )
-    
+
     @contextmanager
     def cursor(self, use_db=True):  # type: (bool) -> cursor
         """
@@ -27,10 +27,10 @@ class PostgresConnector:
             conn = psycopg2.connect(**self._credentials)
         else:
             conn = psycopg2.connect(**dict(self._credentials, dbname=None))
-        
+
         with conn, conn.cursor() as cur:
             yield cur
-    
+
     def execute(self, query, params=None, use_db=True):
         """
         Выполнить SQL запрос с параметрами и вернуть **все** строки, если запрос должен что-то вернуть
@@ -44,6 +44,6 @@ class PostgresConnector:
             cur.execute(query, params)
             if cur.description:
                 return cur.fetchall()
-    
+
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join(f"{key}={value}" for key, value in self.__dict__.values())})'
