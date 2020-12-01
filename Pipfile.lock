@@ -220,6 +220,14 @@
             "index": "pypi",
             "version": "==0.2.2"
         },
+        "rens-paillier": {
+            "hashes": [
+                "sha256:65f124620db3424ce35735b9d815be44f0799146c99c0735e274883b13547315",
+                "sha256:6ec32f2c7c62847dc718ec8202366ea865241d4d5ad8d7df50eb08ecc848c34d"
+            ],
+            "index": "pypi",
+            "version": "==1.2.1"
+        },
         "requests": {
             "hashes": [
                 "sha256:7f1a0b932f4a60a1a65caa4263921bb7d9ee911957e0ae4a23a6dd08185ad5f8",
