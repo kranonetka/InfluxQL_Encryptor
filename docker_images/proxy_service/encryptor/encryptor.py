@@ -55,7 +55,7 @@ class Encryptor:
         :param value: Значение
         :return: Зашифрованное значение
         """
-        return self._phe_encrypt(value)
+        return self._phe_encrypt(plaintext=value)
     
     def phe_decrypt(self, encrypted_value: int) -> int:
         """
@@ -64,7 +64,7 @@ class Encryptor:
         :param encrypted_value: Зашифрованное значение
         :return: Расшифрованное значение
         """
-        return self._phe_decrypt(encrypted_value)
+        return self._phe_decrypt(ciphertext=encrypted_value)
     
     def ope_encrypt(self, value: int) -> int:
         """
