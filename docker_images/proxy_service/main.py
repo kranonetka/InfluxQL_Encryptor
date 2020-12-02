@@ -1,9 +1,12 @@
 import json
 import os
+import pickle
 import pprint
+from pathlib import Path
 
 from flask import Flask, request, Response
 
+from encryptor import WriteTokensEncryptor
 from helpers import get_field_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
@@ -30,8 +33,23 @@ postgres_connector = PostgresConnector(
     db=POSTGRES_DATABASE
 )
 
+with Path(__file__).parent as _root:
+    with (_root / 'types.json').open('r') as fp:
+        types = json.load(fp)
+    
+    with (_root / 'key_storage' / 'phe_public_key').open(mode='rb') as fp:
+        phe_public_key = pickle.load(fp)
+    
+    with (_root / 'key_storage' / 'phe_private_key').open(mode='rb') as fp:
+        phe_private_key = pickle.load(fp)
+
 query_parser = QueryParser()
 write_parser = WriteParser()
+token_encryptor = WriteTokensEncryptor(types=types,
+                                       float_converting_ratio=2 ** 50,
+                                       paillier_pub_key=phe_public_key,
+                                       paillier_priv_key=phe_private_key,
+                                       key=b"a" * 32)
 
 
 @app.route('/')
@@ -116,7 +134,9 @@ def write():
     
     single_line_tokens = write_parser.parse(payload)[0]  # TODO: multiple lines (not only 1st)
     
-    postgres_query, params = WriteAggregator.assemble(single_line_tokens)
+    encrypted_tokens = token_encryptor.encrypt(single_line_tokens, db=request.args.get("db"))
+    
+    postgres_query, params = WriteAggregator.assemble(encrypted_tokens)
     
     postgres_connector.execute(postgres_query, params)
     
