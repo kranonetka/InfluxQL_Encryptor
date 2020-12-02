@@ -38,19 +38,19 @@ GROUP BY
 if __name__ == '__main__':
     visitor = QueryParser()
     index = 1
-
+    
     influxql_query = queries[index]
     print(influxql_query, end='\n=========\n')
-
+    
     tokens = visitor.parse(influxql_query)
     print(tokens, end='\n---------\n')
-
+    
     postgres_query = QueryAggregator.assemble(tokens)
     # print(postgres_query, end='\n~~~~~~~~~~~~\n')
-
+    
     # result = postgres_connector.execute('''SELECT time_bucket('2s', "time"), avg(memory_used) FROM laptop_meas WHERE hostname = '8d89770d7eb1' AND "time" BETWEEN now() - interval '5 min' AND now() GROUP BY 1 ORDER BY 1''')
     result = postgres_connector.execute(postgres_query)
     # print(result, end='\n-=-=-=-=-=-=-=\n')
-
+    
     influxql_resp = ResultAggregator.assemble(result, tokens)
     print(influxql_resp)

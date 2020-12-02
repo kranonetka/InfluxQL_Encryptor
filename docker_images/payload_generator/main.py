@@ -1,5 +1,6 @@
 import os
 import socket
+import traceback
 
 import psutil
 import requests
@@ -16,7 +17,7 @@ if __name__ == '__main__':
                   'cpu_percent={cpu_percent},cpu_freq={cpu_freq},memory_used={memory_used}i'
     print(payload_tpl)
     
-    # requests.post(query_url, params=dict(q='CREATE DATABASE laptop'))
+    # requests.post(query_url, params=dict(q='CREATE DATABASE laptop'))  # Should be as prerequisite
     params = dict(db='laptop')
     while True:
         payload = payload_tpl.format(
@@ -26,5 +27,5 @@ if __name__ == '__main__':
         ).encode()
         try:
             requests.post(write_url, params=params, data=payload)
-        except:
-            pass
+        except:  # noqa: E722
+            traceback.print_exc()

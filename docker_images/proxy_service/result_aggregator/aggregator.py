@@ -35,9 +35,9 @@ class ResultAggregator:
             assembler = ResultAggregator._assemble_show_measurements
         else:
             raise NotImplementedError(str(action))
-
+        
         return assembler(query_result, tokens)
-
+    
     @staticmethod
     def _assemble_select(query_result: List[tuple], tokens: dict) -> dict:
         return {
@@ -57,7 +57,7 @@ class ResultAggregator:
                 }
             ]
         }
-
+    
     @staticmethod
     def _assemble_tag_values(query_result: List[tuple], tokens: dict) -> dict:
         return {
@@ -76,7 +76,7 @@ class ResultAggregator:
                 }
             ]
         }
-
+    
     @staticmethod
     def _assemble_show_retention_policies(query_result: List[tuple], tokens: dict) -> dict:
         if tokens['database'] in chain.from_iterable(query_result):
@@ -116,7 +116,7 @@ class ResultAggregator:
                     }
                 ]
             }
-
+    
     @staticmethod
     def _assemble_show_measurements(query_result: List[tuple], tokens: dict) -> dict:
         return {

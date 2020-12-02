@@ -25,26 +25,53 @@ class Encryptor:
         self.paillier_pub_key = paillier_pub_key
         self.paillier_priv_key = paillier_priv_key
         self.types = types
-
+    
     def encrypt_bytes(self, payload: bytes) -> bytes:
+        """
+        Зашифровать детерменированным шифром последовательность байтов
+        
+        :param payload: Последовательность байтов
+        :return: Зашифрованные байты
+        """
         padder = self._padder_factory.padder()
-
+        
         padded = padder.update(payload) + padder.finalize()
-
+        
         encryptor = self._cipher_factory.encryptor()
-        return base64.b64encode(encryptor.update(padded) + encryptor.finalize()).decode()
-
+        return encryptor.update(padded) + encryptor.finalize()
+    
     def decrypt_bytes(self, payload: bytes) -> bytes:
+        """
+        Расшифровать последовательность байтов, зашифрованных ``Encryptor.encrypt_bytes``
+        
+        :param payload: Зишифрованные байты
+        :return: Расшифрованные байты
+        """
         decryptor = self._cipher_factory.decryptor()
         decrypted = decryptor.update(payload) + decryptor.finalize()
-
+        
         unpadder = self._padder_factory.unpadder()
         return unpadder.update(decrypted) + unpadder.finalize()
-
+    
+    def encrypt_string(self, payload: str) -> str:
+        """
+        Зашифровать строку детерменированным шифром
+        
+        :param payload: Исходная строка
+        :return: base64 от зашифрованной строки
+        """
+        encrypted = self.encrypt_bytes(payload.encode())
+        
+        return base64.b64encode(encrypted).decode()
+    
     def float_to_int(self, value: float) -> int:
         r = (value * self._float_converting_ratio).as_integer_ratio()
-        assert r[1] == 1, 'Not enough precision'
+        
+        if r[1] != 1:
+            raise ValueError(f'Too small float converting ratio ({self._float_converting_ratio}) for value {value}.'
+                             f' Residual denominator {r[1]}')
+        
         return r[0]
-
+    
     def int_to_float(self, value: int) -> float:
         return value / self._float_converting_ratio
