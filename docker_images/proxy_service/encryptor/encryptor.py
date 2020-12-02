@@ -104,6 +104,17 @@ class Encryptor:
         
         return base64.b64encode(encrypted).decode()
     
+    def decrypt_string(self, encrypted_payload: str) -> str:
+        """
+        Расшифровать строку, зашифрованную ``Encryptor.decrypt_string``
+        
+        :param encrypted_payload: Зашифрованная строка
+        :return: Расшифрованная строка
+        """
+        decoded = base64.b64decode(encrypted_payload)
+        
+        return self.decrypt_bytes(decoded).decode()
+    
     def float_to_int(self, value: float) -> int:
         r = (value * self._float_converting_ratio).as_integer_ratio()
         
