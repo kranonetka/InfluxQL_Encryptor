@@ -4,8 +4,8 @@ from functools import partial
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from pyope.ope import OPE, ValueRange
 from paillier import crypto as paillier_crypto
+from pyope.ope import OPE, ValueRange
 
 
 class Encryptor:

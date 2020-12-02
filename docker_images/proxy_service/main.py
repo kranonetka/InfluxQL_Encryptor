@@ -3,6 +3,7 @@ import os
 import pickle
 import pprint
 from pathlib import Path
+
 from flask import Flask, request, Response
 
 from encryptor import WriteTokensEncryptor
@@ -35,13 +36,12 @@ postgres_connector = PostgresConnector(
 with Path(__file__).parent as _root:
     with (_root / 'types.json').open('r') as fp:
         types = json.load(fp)
-        
+    
     with (_root / 'key_storage' / 'phe_public_key').open(mode='rb') as fp:
         phe_public_key = pickle.load(fp)
     
     with (_root / 'key_storage' / 'phe_private_key').open(mode='rb') as fp:
         phe_private_key = pickle.load(fp)
-
 
 query_parser = QueryParser()
 write_parser = WriteParser()
