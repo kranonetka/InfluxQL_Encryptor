@@ -5,11 +5,15 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from paillier import crypto as paillier_crypto
+from paillier.keygen import PublicKey, SecretKey
 from pyope.ope import OPE, ValueRange
 
 
 class Encryptor:
-    def __init__(self, key: bytes, types, paillier_pub_key, paillier_priv_key, float_converting_ratio=2 ** 50):
+    def __init__(
+            self, key: bytes, types: dict, paillier_pub_key: PublicKey, paillier_priv_key: SecretKey,
+            float_converting_ratio=2 ** 50):
+        
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
             mode=modes.CBC(
