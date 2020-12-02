@@ -1,9 +1,11 @@
 import base64
+from functools import partial
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from pyope.ope import OPE, ValueRange
+from paillier import crypto as paillier_crypto
 
 
 class Encryptor:
@@ -22,8 +24,10 @@ class Encryptor:
             in_range=ValueRange(0, 2 ** 64 - 1),
             out_range=ValueRange(2 ** 64, 2 ** 128)
         )
-        self.paillier_pub_key = paillier_pub_key
-        self.paillier_priv_key = paillier_priv_key
+        
+        self._phe_encryptor = partial(paillier_crypto.encrypt, pk=paillier_pub_key)
+        self._phe_decryptor = partial(paillier_crypto.decrypt, pk=paillier_pub_key, sk=paillier_priv_key)
+        
         self.types = types
     
     def encrypt_bytes(self, payload: bytes) -> bytes:
@@ -39,6 +43,42 @@ class Encryptor:
         
         encryptor = self._cipher_factory.encryptor()
         return encryptor.update(padded) + encryptor.finalize()
+    
+    def phe_encrypt(self, value: int) -> int:
+        """
+        Зашифровать значение шифром, сохраняющим операцию суммирования
+        
+        :param value: Значение
+        :return: Зашифрованное значение
+        """
+        return self._phe_encryptor(value)
+    
+    def phe_decrypt(self, encrypted_value: int) -> int:
+        """
+        Расшифровать значение, зашифрованное ``Encryptor.phe_encrypt``
+        
+        :param encrypted_value: Зашифрованное значение
+        :return: Расшифрованное значение
+        """
+        return self._phe_decryptor(encrypted_value)
+    
+    def ope_encrypt(self, value: int) -> int:
+        """
+        Зашифрование значение шифром, сохраняющим порядок
+        
+        :param value: Значение
+        :return: Зашифрованное значение
+        """
+        return self._ope_cipher.encrypt(value)
+    
+    def ope_decrypt(self, encrypted_value: int) -> int:
+        """
+        Расшифровать значение, зашифрованное ``Encryptor.ope_encrypt``
+        
+        :param encrypted_value: Зашифрованное значение
+        :return: Расшифрованное значение
+        """
+        return self._ope_cipher.decrypt(encrypted_value)
     
     def decrypt_bytes(self, payload: bytes) -> bytes:
         """
