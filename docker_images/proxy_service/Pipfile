@@ -12,6 +12,7 @@ requests = "*"
 pyope = "*"
 flask = "*"
 psycopg2 = "*"
+rens-paillier = "*"
 
 [requires]
 python_version = "3.8"
