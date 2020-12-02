@@ -3,7 +3,7 @@ import os
 import pprint
 
 from flask import Flask, request, Response
-
+import itertools
 from helpers import get_field_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
