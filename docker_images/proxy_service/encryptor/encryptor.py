@@ -29,8 +29,8 @@ class Encryptor:
             out_range=ValueRange(2 ** 64, 2 ** 128)
         )
         
-        self._phe_encryptor = partial(paillier_crypto.encrypt, pk=paillier_pub_key)
-        self._phe_decryptor = partial(paillier_crypto.decrypt, pk=paillier_pub_key, sk=paillier_priv_key)
+        self._phe_encrypt = partial(paillier_crypto.encrypt, pk=paillier_pub_key)
+        self._phe_decrypt = partial(paillier_crypto.decrypt, pk=paillier_pub_key, sk=paillier_priv_key)
         
         self.types = types
     
@@ -55,7 +55,7 @@ class Encryptor:
         :param value: Значение
         :return: Зашифрованное значение
         """
-        return self._phe_encryptor(value)
+        return self._phe_encrypt(value)
     
     def phe_decrypt(self, encrypted_value: int) -> int:
         """
@@ -64,7 +64,7 @@ class Encryptor:
         :param encrypted_value: Зашифрованное значение
         :return: Расшифрованное значение
         """
-        return self._phe_decryptor(encrypted_value)
+        return self._phe_decrypt(encrypted_value)
     
     def ope_encrypt(self, value: int) -> int:
         """
