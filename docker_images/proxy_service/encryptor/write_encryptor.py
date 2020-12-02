@@ -14,7 +14,7 @@ class WriteTokensEncryptor(Encryptor):
             encrypted["tags"][tag_key] = encrypted_tag_value
         
         for field_key, field_value in tokens.get("fields", {}).items():
-            type_of_value = self.types.get(db, {}).get(tokens.get("measurement")).get(field_key).get("type")
+            type_of_value = self._types.get(db, {}).get(tokens.get("measurement")).get(field_key).get("type")
             
             if type_of_value == "string":
                 encrypted_field_value = self.encrypt_string(field_value)
@@ -23,7 +23,7 @@ class WriteTokensEncryptor(Encryptor):
                 if type_of_value == 'float':
                     field_value = self.float_to_int(field_value)
                 
-                operations = self.types.get(db, {}).get(tokens.get("measurement")).get(field_key).get("operations")
+                operations = self._types.get(db, {}).get(tokens.get("measurement")).get(field_key).get("operations")
                 
                 if operations[0] == '>':
                     encrypted_field_value = self.ope_encrypt(field_value)

@@ -32,7 +32,7 @@ class Encryptor:
         self._phe_encrypt = partial(paillier_crypto.encrypt, pk=paillier_pub_key)
         self._phe_decrypt = partial(paillier_crypto.decrypt, pk=paillier_pub_key, sk=paillier_priv_key)
         
-        self.types = types
+        self._types = types
     
     def encrypt_bytes(self, payload: bytes) -> bytes:
         """
