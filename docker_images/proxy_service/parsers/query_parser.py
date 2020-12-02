@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-from operator import sub, add
 from enum import Enum, auto
+from operator import sub, add
+
 from parsimonious.nodes import Node, NodeVisitor
 
 from ._grammars import influxql_grammar

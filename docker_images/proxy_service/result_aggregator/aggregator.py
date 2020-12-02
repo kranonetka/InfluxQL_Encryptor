@@ -1,8 +1,9 @@
-from itertools import repeat, chain
-from typing import List
-from parsers import Action
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
+from itertools import chain
+from typing import List
+
+from parsers import Action
 
 
 def normalize(item):
@@ -84,13 +85,14 @@ class ResultAggregator:
                     {
                         "statement_id": 0,
                         "series": [
-                            {"columns": [
-                                "name",
-                                "duration",
-                                "shardGroupDuration",
-                                "replicaN",
-                                "default"
-                            ],
+                            {
+                                "columns": [
+                                    "name",
+                                    "duration",
+                                    "shardGroupDuration",
+                                    "replicaN",
+                                    "default"
+                                ],
                                 "values": [
                                     [
                                         "autogen",

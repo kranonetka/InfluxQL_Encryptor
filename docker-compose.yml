@@ -5,16 +5,16 @@ services:
   timescale:
     build: docker_images/timescale
     environment:
-    - POSTGRES_PASSWORD=password
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=laptop
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=laptop
     ports:
-    - 5432:5432
+      - 5432:5432
 
   proxy:
     build: docker_images/proxy_service
     ports:
-    - 5000:5000
+      - 5000:5000
     links:
       - timescale
     environment:
@@ -38,11 +38,11 @@ services:
       - proxy
 
   grafana:
-      image: grafana/grafana
-      environment:
+    image: grafana/grafana
+    environment:
       - GF_SERVER_HTTP_PORT=8092
-      ports:
+    ports:
       - 8092:8092
-      links:
+    links:
       - proxy
       - timescale

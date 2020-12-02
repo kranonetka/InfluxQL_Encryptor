@@ -1,7 +1,7 @@
-from parsers import QueryParser
-from token_aggregators import QueryAggregator
-from result_aggregator import ResultAggregator
 from docker_images.proxy_service.main import postgres_connector
+from parsers import QueryParser
+from result_aggregator import ResultAggregator
+from token_aggregators import QueryAggregator
 
 queries = (
     """SELECT

@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from itertools import chain
 
 import psycopg2
 from psycopg2.extensions import cursor

@@ -32,7 +32,7 @@ ope_cipher = OPE(
 def get_field_keys(db_name, table):
     with open("types.json", "r") as file:
         types: dict = json.load(file)
-
+    
     return [[key, value['type']] for key, value in types.get(db_name, {}).get(table, {}).items()]
 
 
@@ -53,7 +53,7 @@ def encrypt_fields(payload_info, database):
         operation = types.get(database, {}).get(payload_info["measurement"], {}).get(tag_key, {}).get('operations')
         encrypted_tags[tag_key] = encrypt(payload_info["tags"][tag_key], type_of_tag, operation)
     encrypted_payload_info["tags"] = encrypted_tags
-
+    
     for field_key in payload_info["fields"].keys():
         type_of_field = types.get(database, {}).get(payload_info["measurement"], {}).get(field_key, {}).get('type')
         operation = types.get(database, {}).get(payload_info["measurement"], {}).get(field_key, {}).get('operations')

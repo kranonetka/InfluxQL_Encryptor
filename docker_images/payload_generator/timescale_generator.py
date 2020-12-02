@@ -44,7 +44,7 @@ def create_table():
 def simulate_data():
     conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD, dbname=DATABASE)
     cur = conn.cursor()
-
+    
     simulate_query = """SELECT  generate_series(now() - interval '24 hour', now(), interval '5 minute') AS time,
         md5(random()::text) as hostname,
         random()*100 AS cpu_percent,
@@ -63,9 +63,9 @@ def simulate_data():
 def main():
     create_db()
     create_table()
-
+    
     # simulate_data()
-
+    
     conn = psycopg2.connect(host=HOST, port=PORT, user=USERNAME, password=PASSWORD, dbname=DATABASE)
     cur = conn.cursor()
     payload_tpl = "INSERT INTO laptop_meas (time, hostname, cpu_percent, cpu_freq, memory_used) VALUES (now(), %s, %s, %s, %s);"

@@ -7,8 +7,8 @@ from flask import Flask, request, Response
 from helpers import get_field_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
-from token_aggregators import QueryAggregator, WriteAggregator
 from result_aggregator import ResultAggregator
+from token_aggregators import QueryAggregator, WriteAggregator
 
 try:
     FLASK_PORT = os.environ['FLASK_PORT']
@@ -106,7 +106,7 @@ def query():
         result = postgres_connector.execute(postgres_query, params)
         
         return ResultAggregator.assemble(result, tokens)
-        
+    
     return Response(status=404)
 
 

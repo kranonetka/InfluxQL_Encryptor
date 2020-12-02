@@ -1,8 +1,8 @@
+from collections import abc
 from datetime import datetime, timedelta
 from typing import Tuple, Union
 
 from parsers import Action
-from collections import abc
 
 
 def _datetime_to_iso8601(dt: datetime):
