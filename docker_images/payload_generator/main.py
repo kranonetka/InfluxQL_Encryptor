@@ -26,6 +26,6 @@ if __name__ == '__main__':
             memory_used=psutil.virtual_memory().used
         ).encode()
         try:
-            requests.post(write_url, params=params, data=payload)
+            requests.post(write_url, params=params, data=payload).raise_for_status()
         except:  # noqa: E722
             traceback.print_exc()
