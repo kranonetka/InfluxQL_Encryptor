@@ -148,10 +148,10 @@ class QueryParser(NodeVisitor):
         value_node: Node = node.children[4].children[0]
         if value_node.expr_name == 'duration_lit':
             duration = _parse_duration(value_node)
-            dt = datetime.fromtimestamp(duration.total_seconds())
+            dt = datetime.utcfromtimestamp(duration.total_seconds())
         else:
             duration = _parse_duration(value_node.children[4])
-            dt = _operators[value_node.children[2].text](datetime.now(), duration)
+            dt = _operators[value_node.children[2].text](datetime.utcnow(), duration)
         return 'time', op, dt
     
     def visit_group_by_clause(self, node: Node, visited_children: list):
