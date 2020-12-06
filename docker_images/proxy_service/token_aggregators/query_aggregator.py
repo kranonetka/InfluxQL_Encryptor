@@ -45,8 +45,9 @@ class QueryAggregator:
         field_key = tokens['field_key']
         if (aggregation := tokens.get('aggregation')) is not None:
             if aggregation == 'mean':
-                selectors.append(f'phe_sum({field_key}, %s), count({field_key})')
+                selectors.append(f'phe_sum({field_key}, %s)')
                 params.append(self._phe_n)
+                selectors.append(f'count({field_key})')
             else:
                 selectors.append(f'{aggregation}({field_key})')
         else:
