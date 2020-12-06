@@ -3,10 +3,11 @@ import os
 import pickle
 import pprint
 from pathlib import Path
+from paillier import keygen
 
 from flask import Flask, request, Response
 
-from encryptor import WriteTokensEncryptor
+from encryptor import WriteTokensEncryptor, QueryEncryptor, ResultDecryptor
 from helpers import get_field_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
@@ -38,18 +39,36 @@ with Path(__file__).parent as _root:
         types = json.load(fp)
     
     with (_root / 'key_storage' / 'phe_public_key').open(mode='rb') as fp:
-        phe_public_key = pickle.load(fp)
+        phe_public_key = pickle.load(fp)  # type: keygen.PublicKey
     
     with (_root / 'key_storage' / 'phe_private_key').open(mode='rb') as fp:
         phe_private_key = pickle.load(fp)
 
+key = b'a' * 32
+
 query_parser = QueryParser()
 write_parser = WriteParser()
-token_encryptor = WriteTokensEncryptor(types=types,
-                                       float_converting_ratio=2 ** 50,
-                                       paillier_pub_key=phe_public_key,
-                                       paillier_priv_key=phe_private_key,
-                                       key=b"a" * 32)
+write_tokens_encryptor = WriteTokensEncryptor(types=types,
+                                              float_converting_ratio=2 ** 55,
+                                              paillier_pub_key=phe_public_key,
+                                              paillier_priv_key=phe_private_key,
+                                              key=key)
+
+query_tokens_encryptor = QueryEncryptor(types=types,
+                                        float_converting_ratio=2 ** 55,
+                                        paillier_pub_key=phe_public_key,
+                                        paillier_priv_key=phe_private_key,
+                                        key=key)
+
+result_decryptor = ResultDecryptor(types=types,
+                                   float_converting_ratio=2 ** 55,
+                                   paillier_pub_key=phe_public_key,
+                                   paillier_priv_key=phe_private_key,
+                                   key=key)
+
+query_tokens_aggregator = QueryAggregator(
+    phe_n=phe_public_key.n
+)
 
 
 @app.route('/')
@@ -134,7 +153,7 @@ def write():
     
     single_line_tokens = write_parser.parse(payload)[0]  # TODO: multiple lines (not only 1st)
     
-    encrypted_tokens = token_encryptor.encrypt(single_line_tokens, db=request.args.get("db"))
+    encrypted_tokens = write_tokens_encryptor.encrypt(single_line_tokens, db=request.args.get("db"))
     
     postgres_query, params = WriteAggregator.assemble(encrypted_tokens)
     
