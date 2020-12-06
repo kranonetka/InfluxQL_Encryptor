@@ -11,10 +11,10 @@ def normalize(item):
         return float(item)
     elif isinstance(item, datetime):
         return int(item.timestamp() * 1000)
-    elif isinstance(item, int):
+    elif isinstance(item, (int, float)):
         return item
     else:
-        raise TypeError(f'{item}')
+        raise TypeError(f'{type(item)}')
 
 
 def normalize_seq(seq):
