@@ -1,6 +1,6 @@
 from typing import List
 
-from .encryptor import Encryptor
+from ._encryptor import Encryptor
 
 
 class ResultDecryptor(Encryptor):

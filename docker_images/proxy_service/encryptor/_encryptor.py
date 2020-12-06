@@ -1,4 +1,5 @@
 import base64
+from abc import ABC
 from functools import partial
 
 from cryptography.hazmat.backends import default_backend
@@ -9,7 +10,7 @@ from paillier.keygen import PublicKey, SecretKey
 from pyope.ope import OPE, ValueRange
 
 
-class Encryptor:
+class Encryptor(ABC):
     def __init__(
             self, key: bytes, types: dict, paillier_pub_key: PublicKey, paillier_priv_key: SecretKey,
             float_converting_ratio=2 ** 50):
