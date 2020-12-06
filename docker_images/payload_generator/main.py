@@ -1,5 +1,4 @@
 import os
-import socket
 import traceback
 
 import psutil
@@ -13,7 +12,7 @@ query_url = f'http://{os.environ["TARGET_HOST"]}:{os.environ["TARGET_PORT"]}/que
 write_url = f'http://{os.environ["TARGET_HOST"]}:{os.environ["TARGET_PORT"]}/write'
 
 if __name__ == '__main__':
-    payload_tpl = f'laptop_meas,hostname=payload_generator ' \
+    payload_tpl = 'laptop_meas,hostname=payload_generator ' \
                   'cpu_percent={cpu_percent},cpu_freq={cpu_freq},memory_used={memory_used}i'
     print(payload_tpl)
     
