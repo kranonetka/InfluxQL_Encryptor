@@ -1,20 +1,8 @@
 from collections import abc
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Tuple, Union
 
 from parsers import Action
-
-
-def _datetime_to_iso8601(dt: datetime):
-    retstr = dt.strftime('%Y-%m-%dT%H:%M:%S')
-    if dt.microsecond:
-        retstr += dt.strftime('.%f')[:-3].rstrip('0')
-    return retstr + 'Z'
-
-
-_func_mapping = dict(
-    mean='avg'
-)
 
 
 class QueryAggregator:
@@ -54,8 +42,10 @@ class QueryAggregator:
         
         field_key = tokens['field_key']
         if (aggregation := tokens.get('aggregation')) is not None:
-            aggregation = _func_mapping.get(aggregation, aggregation)
-            selectors.append(f'{aggregation}({field_key})')
+            if aggregation == 'mean':
+                selectors.append(f'phe_sum({field_key}), count({field_key})')
+            else:
+                selectors.append(f'{aggregation}({field_key})')
         else:
             selectors.append(field_key)
         
@@ -64,24 +54,18 @@ class QueryAggregator:
         query.append(f'FROM {tokens["measurement"]}')
         query.append('WHERE')
         
+        params = []
         where_conditions = []
-        time_boundaries = [datetime.utcnow()] * 2
         for key, operator, value in tokens.get('where_conditions', ()):
-            if key == 'time':
-                index = 0 if operator == '>=' else 1
-                time_boundaries[index] = value
-            else:
-                where_conditions.append(f"{key} {operator} '{value}'")
-        
-        time_boundaries = map(_datetime_to_iso8601, time_boundaries)
-        
-        where_conditions.append("\"time\" BETWEEN '{}' AND '{}'".format(*time_boundaries))
+            print(f'{key} {operator} {value}')
+            where_conditions.append(f'{key} {operator} %s')
+            params.append(value)
         
         query.append(' AND '.join(where_conditions))
         
         query.append('GROUP BY 1 ORDER BY 1')
         
-        return ' '.join(query), None
+        return ' '.join(query), params
     
     @staticmethod
     def _assemble_show_measurements(tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
