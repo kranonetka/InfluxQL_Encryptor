@@ -3,9 +3,9 @@ import os
 import pickle
 import pprint
 from pathlib import Path
-from paillier import keygen
 
 from flask import Flask, request, Response
+from paillier import keygen
 
 from encryptor import WriteTokensEncryptor, QueryEncryptor, ResultDecryptor
 from helpers import get_field_keys
