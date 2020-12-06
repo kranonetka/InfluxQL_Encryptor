@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from .encryptor import Encryptor
+from ._encryptor import Encryptor
 
 
 class QueryEncryptor(Encryptor):

@@ -1,4 +1,4 @@
-from .encryptor import Encryptor
+from ._encryptor import Encryptor
 
 
 class WriteTokensEncryptor(Encryptor):
