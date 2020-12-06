@@ -2,7 +2,7 @@ from main import query_tokens_aggregator, query_tokens_encryptor, postgres_conne
 from parsers import QueryParser
 from result_aggregator import ResultAggregator
 
-query = '''SELECT mean("memory_used") FROM "laptop_meas" WHERE ("hostname" = 'cbac5b7820f7') AND time >= now() - 6h GROUP BY time(15s) fill(null)'''
+query = '''SELECT mean("cpu_freq") FROM "laptop_meas" WHERE ("hostname" = 'payload_generator') AND time >= now() - 6h GROUP BY time(15s) fill(null)'''
 
 if __name__ == '__main__':
     visitor = QueryParser()
@@ -29,5 +29,5 @@ if __name__ == '__main__':
     decrypted_result = result_decryptor.decrypt(encrypted_result, 'laptop', tokens)
     print(decrypted_result)
     
-    influxql_resp = ResultAggregator.assemble(encrypted_result, tokens)
+    influxql_resp = ResultAggregator.assemble(decrypted_result, tokens)
     print(influxql_resp)
