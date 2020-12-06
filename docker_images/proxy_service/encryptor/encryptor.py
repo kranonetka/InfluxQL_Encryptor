@@ -13,7 +13,6 @@ class Encryptor:
     def __init__(
             self, key: bytes, types: dict, paillier_pub_key: PublicKey, paillier_priv_key: SecretKey,
             float_converting_ratio=2 ** 50):
-        
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(key),
             mode=modes.CBC(
