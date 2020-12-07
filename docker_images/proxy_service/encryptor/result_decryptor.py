@@ -25,6 +25,6 @@ class ResultDecryptor(Encryptor):
             ]
         
         if tokens.get('aggregation') == 'mean':
-            query_result = [(row[0], row[1] / row[2],) for row in query_result]
+            query_result = [(row[0], row[1] / row[2]) for row in query_result]
         
         return query_result
