@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from itertools import chain
 from typing import List
 
@@ -7,9 +6,7 @@ from parsers import Action
 
 
 def normalize(item):
-    if isinstance(item, Decimal):
-        return float(item)
-    elif isinstance(item, datetime):
+    if isinstance(item, datetime):
         return int(item.timestamp() * 1000)
     elif isinstance(item, (int, float)):
         return item
