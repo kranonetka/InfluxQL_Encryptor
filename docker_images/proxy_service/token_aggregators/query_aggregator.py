@@ -1,6 +1,8 @@
 from collections import abc
 from datetime import timedelta
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
+
+from psycopg2 import sql
 
 from parsers import Action
 
@@ -9,7 +11,7 @@ class QueryAggregator:
     def __init__(self, phe_n: int):
         self._phe_n = phe_n
     
-    def assemble(self, tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
+    def assemble(self, tokens: dict) -> Tuple[sql.Composable, Optional[abc.Sequence]]:
         action = tokens.get('action')
         if action == Action.SELECT:
             assembler = self._assemble_select
@@ -28,9 +30,8 @@ class QueryAggregator:
         
         return assembler(tokens)
     
-    def _assemble_select(self, tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
-        query = ['SELECT']
-        params = []
+    def _assemble_select(self, tokens: dict) -> Tuple[sql.Composable, Optional[abc.Sequence]]:
+        query = [sql.SQL('SELECT')]
         
         selectors = []
         group_by = tokens.get('group_by')
@@ -38,46 +39,69 @@ class QueryAggregator:
             duration = group_by.total_seconds()
             if int(duration) == duration:
                 duration = int(duration)
-            selectors.append(f'time_bucket(\'{duration}s\', "time")')
+            selectors.append(sql.SQL('time_bucket({duration}, {time})').format(
+                duration=sql.Literal(f'{duration}s'),
+                time=sql.Identifier('time')
+            ))
         else:
             raise NotImplementedError('Grouping by time intervals only')  # TODO
         
         field_key = tokens['field_key']
         if (aggregation := tokens.get('aggregation')) is not None:
-            if aggregation == 'mean':
-                selectors.append(f'phe_sum({field_key}, %s)')
-                params.append(self._phe_n)
-                selectors.append(f'count({field_key})')
+            if aggregation in ('mean', 'sum'):
+                selectors.append(sql.SQL('phe_sum({field_key}, {modulus})').format(
+                    field_key=sql.Identifier(field_key),
+                    modulus=sql.Literal(self._phe_n))
+                )
+                if aggregation == 'mean':
+                    selectors.append(sql.SQL('count({field_key})').format(
+                        field_key=sql.Identifier(field_key))
+                    )
             else:
-                selectors.append(f'{aggregation}({field_key})')
+                selectors.append(sql.SQL('{aggregation}({field_key})').format(
+                    aggregation=sql.SQL(aggregation),
+                    field_key=sql.Identifier(field_key))
+                )
         else:
-            selectors.append(field_key)
+            selectors.append(sql.Identifier(field_key))
         
-        query.append(', '.join(selectors))
+        query.append(sql.SQL(',').join(selectors))
         
-        query.append(f'FROM {tokens["measurement"]}')
-        query.append('WHERE')
+        query.append(sql.SQL('FROM {table_name}').format(
+            table_name=sql.Identifier(tokens['measurement'])
+        ))
         
         where_conditions = []
         for key, operator, value in tokens.get('where_conditions', ()):
-            print(f'{key} {operator} {value}')
-            where_conditions.append(f'{key} {operator} %s')
-            params.append(value)
+            where_conditions.append(sql.SQL('{key} {operator} {value}').format(
+                key=sql.Identifier(key),
+                operator=sql.SQL(operator),
+                value=sql.Literal(value)
+            ))
         
-        query.append(' AND '.join(where_conditions))
+        if where_conditions:
+            query.append(sql.SQL('WHERE ') + sql.SQL(' AND ').join(where_conditions))
         
-        query.append('GROUP BY 1 ORDER BY 1')
+        query.append(sql.SQL('GROUP BY 1 ORDER BY 1'))
         
-        return ' '.join(query), params
+        return sql.SQL(' ').join(query), None
     
-    def _assemble_show_measurements(self, tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
-        query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+    def _assemble_show_measurements(self, tokens: dict) -> Tuple[sql.Composable, Optional[abc.Sequence]]:
+        query = sql.SQL("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        
         if (limit := tokens.get('limit')) is not None:
-            query += f' LIMIT {limit}'
+            query += sql.SQL(' LIMIT {limit}').format(
+                limit=sql.Literal(limit)
+            )
+        
         return query, None
     
-    def _assemble_show_retention_policies(self, tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
-        return 'SELECT datname FROM pg_database;', None
+    def _assemble_show_retention_policies(self, tokens: dict) -> Tuple[sql.Composable, Optional[abc.Sequence]]:
+        return sql.SQL('SELECT datname FROM pg_database;'), None
     
-    def _assemble_show_tag_values(self, tokens: dict) -> Tuple[str, Union[abc.Sequence, None]]:
-        return f'SELECT DISTINCT %s, {tokens["tag_key"]} FROM {tokens["measurement"]}', [tokens["tag_key"]]
+    def _assemble_show_tag_values(self, tokens: dict) -> Tuple[sql.Composable, Union[abc.Sequence, None]]:
+        return sql.SQL('SELECT DISTINCT {col_name_literal}, {col_name} FROM {table_name}').format(
+            col_name_literal=sql.Literal(tokens['tag_key']),
+            col_name=sql.Identifier(tokens['tag_key']),
+            table_name=sql.Identifier(tokens['measurement'])
+        ), None
