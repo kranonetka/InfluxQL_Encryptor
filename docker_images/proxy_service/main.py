@@ -138,9 +138,12 @@ def query():
             }
             return res
         
-        postgres_query, params = QueryAggregator.assemble(tokens)
+        postgres_query, params = query_tokens_aggregator.assemble(tokens)
         
         result = postgres_connector.execute(postgres_query, params)
+        
+        if tokens['action'] == Action.SELECT:
+            result = result_decryptor.decrypt(result, db=db_name, tokens=tokens)
         
         return ResultAggregator.assemble(result, tokens)
     
