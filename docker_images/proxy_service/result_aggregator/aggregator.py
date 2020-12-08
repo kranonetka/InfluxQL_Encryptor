@@ -24,8 +24,12 @@ class ResultAggregator:
         action = tokens.get('action')
         if action == Action.SELECT:
             assembler = ResultAggregator._assemble_select
+        elif action == Action.SHOW_TAG_KEYS:
+            assembler = ResultAggregator._assemble_tag_keys
         elif action == Action.SHOW_TAG_VALUES:
             assembler = ResultAggregator._assemble_tag_values
+        elif action == Action.SHOW_FIELD_KEYS:
+            assembler = ResultAggregator._assemble_field_keys
         elif action == Action.SHOW_RETENTION_POLICIES:
             assembler = ResultAggregator._assemble_show_retention_policies
         elif action == Action.SHOW_MEASUREMENTS:
@@ -56,6 +60,25 @@ class ResultAggregator:
         }
     
     @staticmethod
+    def _assemble_tag_keys(tags: List[tuple], tokens: dict) -> dict:
+        return {
+            "results": [
+                {
+                    "statement_id": 0,
+                    "series": [
+                        {
+                            "name": tokens['measurement'],
+                            "columns": [
+                                "tagKey"
+                            ],
+                            "values": tags
+                        }
+                    ]
+                }
+            ]
+        }
+    
+    @staticmethod
     def _assemble_tag_values(query_result: List[tuple], tokens: dict) -> dict:
         return {
             "results": [
@@ -68,6 +91,26 @@ class ResultAggregator:
                                 "key", "value"
                             ],
                             "values": query_result
+                        }
+                    ]
+                }
+            ]
+        }
+    
+    @staticmethod
+    def _assemble_field_keys(field_keys: List[tuple], tokens: dict) -> dict:
+        return {
+            "results": [
+                {
+                    "statement_id": 0,
+                    "series": [
+                        {
+                            "name": tokens['measurement'],
+                            "columns": [
+                                "fieldKey",
+                                "fieldType"
+                            ],
+                            "values": field_keys
                         }
                     ]
                 }

@@ -1,10 +1,16 @@
 from typing import List
-
+from parsers import Action
 from ._encryptor import Encryptor
 
 
 class ResultDecryptor(Encryptor):
     def decrypt(self, query_result: List[tuple], db: str, tokens: dict):
+        if tokens['action'] == Action.SHOW_TAG_VALUES:
+            query_result = [
+                (tag_key, self.decrypt_string(tag_value)) for tag_key, tag_value in query_result
+            ]
+            return query_result
+        
         field = self._types.get(db, {}).get(tokens['measurement'], {}).get(tokens['field_key'])
         field_type, supported_operation = field['type'], field['operations'][0]
         

@@ -110,7 +110,7 @@ class Encryptor(ABC):
     
     def decrypt_string(self, encrypted_payload: str) -> str:
         """
-        Расшифровать строку, зашифрованную ``Encryptor.decrypt_string``
+        Расшифровать строку, зашифрованную ``Encryptor.encrypt_string``
         
         :param encrypted_payload: Зашифрованная строка
         :return: Расшифрованная строка
