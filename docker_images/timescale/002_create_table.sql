@@ -5,4 +5,6 @@ CREATE TABLE laptop_meas
     cpu_percent NUMERIC,
     cpu_freq    NUMERIC,
     memory_used NUMERIC
-)
+);
+
+CREATE INDEX ON laptop_meas (hostname, time DESC);
