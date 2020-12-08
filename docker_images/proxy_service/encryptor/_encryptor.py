@@ -25,8 +25,8 @@ class Encryptor(ABC):
         self._float_converting_ratio = float_converting_ratio
         self._ope_cipher = OPE(
             key=key,
-            in_range=ValueRange(0, 2 ** 64 - 1),
-            out_range=ValueRange(2 ** 64, 2 ** 128)
+            in_range=ValueRange(-9023372036854775808, 9023372036854775807),  # min and max influxdb integers
+            out_range=ValueRange(-(2 ** 127), 2 ** 127 - 1)  # 128 bit signed integer
         )
         
         self._phe_encrypt = partial(paillier_crypto.encrypt, pk=paillier_pub_key)

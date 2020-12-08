@@ -20,7 +20,8 @@ class ResultDecryptor(Encryptor):
         return query_result
     
     def _decrypt_select(self, query_result, db, tokens):
-        
+        if tokens.get('aggregation') == 'count':
+            return query_result
         field = self._types.get(db, {}).get(tokens['measurement'], {}).get(tokens['field_key'])
         field_type, supported_operation = field['type'], field['operations'][0]
         
