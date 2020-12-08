@@ -7,7 +7,7 @@ from pathlib import Path
 from flask import Flask, request, Response
 from paillier import keygen
 
-from encryptor import WriteTokensEncryptor, QueryEncryptor, ResultDecryptor
+from encryptor import EncryptionFactory
 from helpers import get_field_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
@@ -48,23 +48,15 @@ key = b'a' * 32
 
 query_parser = QueryParser()
 write_parser = WriteParser()
-write_tokens_encryptor = WriteTokensEncryptor(types=types,
-                                              float_converting_ratio=2 ** 55,
-                                              paillier_pub_key=phe_public_key,
-                                              paillier_priv_key=phe_private_key,
-                                              key=key)
 
-query_tokens_encryptor = QueryEncryptor(types=types,
-                                        float_converting_ratio=2 ** 55,
-                                        paillier_pub_key=phe_public_key,
-                                        paillier_priv_key=phe_private_key,
-                                        key=key)
-
-result_decryptor = ResultDecryptor(types=types,
-                                   float_converting_ratio=2 ** 55,
-                                   paillier_pub_key=phe_public_key,
-                                   paillier_priv_key=phe_private_key,
-                                   key=key)
+with EncryptionFactory(types=types,
+                       float_converting_ratio=2 ** 51,
+                       paillier_pub_key=phe_public_key,
+                       paillier_priv_key=phe_private_key,
+                       key=key) as encryption_factory:
+    write_tokens_encryptor = encryption_factory.write_encryptor()
+    query_tokens_encryptor = encryption_factory.query_encryptor()
+    result_decryptor = encryption_factory.result_decryptor()
 
 query_tokens_aggregator = QueryAggregator(
     phe_n=phe_public_key.n
