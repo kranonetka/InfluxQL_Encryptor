@@ -90,51 +90,22 @@ def query():
         
         if tokens["action"] == Action.SHOW_FIELD_KEYS:
             field_keys = get_field_keys(db_name, tokens['measurement'])
-            return {
-                "results": [
-                    {
-                        "statement_id": 0,
-                        "series": [
-                            {
-                                "name": tokens['measurement'],
-                                "columns": [
-                                    "fieldKey",
-                                    "fieldType"
-                                ],
-                                "values": field_keys
-                            }
-                        ]
-                    }
-                ]
-            }
+            return ResultAggregator.assemble(field_keys, tokens)
         
         elif tokens['action'] == Action.SHOW_TAG_KEYS:
             with open('tags.json', 'r') as fp:
                 data = json.load(fp)
-            tags = data.get(db_name, {}).get(tokens['measurement'], [])
-            res = {
-                "results": [
-                    {
-                        "statement_id": 0,
-                        "series": [
-                            {
-                                "name": tokens['measurement'],
-                                "columns": [
-                                    "tagKey"
-                                ],
-                                "values": tags
-                            }
-                        ]
-                    }
-                ]
-            }
-            return res
+            tag_keys = data.get(db_name, {}).get(tokens['measurement'], [])
+            return ResultAggregator.assemble(tag_keys, tokens)
         
         postgres_query, params = query_tokens_aggregator.assemble(tokens)
         
         result = postgres_connector.execute(postgres_query, params)
         
         if tokens['action'] == Action.SELECT:
+            result = result_decryptor.decrypt(result, db=db_name, tokens=tokens)
+        
+        elif tokens['action'] == Action.SHOW_TAG_VALUES:
             result = result_decryptor.decrypt(result, db=db_name, tokens=tokens)
         
         return ResultAggregator.assemble(result, tokens)
@@ -158,5 +129,4 @@ def write():
 
 
 if __name__ == '__main__':
-    # TODO: Create UDF ope_sum
     app.run(debug=True, host='0.0.0.0', port=FLASK_PORT)
