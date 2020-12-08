@@ -5,6 +5,9 @@ from ._encryptor import Encryptor
 
 class ResultDecryptor(Encryptor):
     def decrypt(self, query_result: List[tuple], db: str, tokens: dict):
+        if tokens.get('aggregation') == 'count':
+            return query_result
+        
         field = self._types.get(db, {}).get(tokens['measurement'], {}).get(tokens['field_key'])
         field_type, supported_operation = field['type'], field['operations'][0]
         
