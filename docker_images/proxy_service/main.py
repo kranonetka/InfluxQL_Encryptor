@@ -97,8 +97,10 @@ def query():
                 data = json.load(fp)
             tag_keys = data.get(db_name, {}).get(tokens['measurement'], [])
             return ResultAggregator.assemble(tag_keys, tokens)
-        
-        postgres_query, params = query_tokens_aggregator.assemble(tokens)
+
+        encrypted_tokens = query_tokens_encryptor.encrypt(tokens)
+
+        postgres_query, params = query_tokens_aggregator.assemble(encrypted_tokens)
         
         result = postgres_connector.execute(postgres_query, params)
         
