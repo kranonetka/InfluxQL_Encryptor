@@ -7,4 +7,6 @@ CREATE TABLE laptop_meas
     memory_used NUMERIC
 );
 
-CREATE INDEX ON laptop_meas (hostname, time DESC);
+SELECT create_hypertable('laptop_meas', 'time');
+
+CREATE INDEX ON laptop_meas ("hostname", "time" DESC);
