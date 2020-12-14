@@ -12,19 +12,19 @@ from pyope.ope import OPE, ValueRange
 
 class Encryptor(ABC):
     def __init__(
-            self, key: bytes, types: dict, paillier_pub_key: PublicKey, paillier_priv_key: SecretKey,
+            self, ope_key: bytes, types: dict, paillier_pub_key: PublicKey, paillier_priv_key: SecretKey,
             float_converting_ratio=2 ** 50):
         self._cipher_factory = Cipher(
-            algorithm=algorithms.AES(key),
+            algorithm=algorithms.AES(ope_key),
             mode=modes.CBC(
                 initialization_vector=b'\x00' * 16
             ),
             backend=default_backend()
         )
-        self._padder_factory = padding.PKCS7(8 * len(key))
+        self._padder_factory = padding.PKCS7(8 * len(ope_key))
         self._float_converting_ratio = float_converting_ratio
         self._ope_cipher = OPE(
-            key=key,
+            key=ope_key,
             in_range=ValueRange(-9023372036854775808, 9023372036854775807),  # min and max influxdb integers
             out_range=ValueRange(-(2 ** 127), 2 ** 127 - 1)  # 128 bit signed integer
         )
