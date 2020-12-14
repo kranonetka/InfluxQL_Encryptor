@@ -1,14 +1,13 @@
 import json
 import os
-import pickle
 import pprint
 from pathlib import Path
 
 from flask import Flask, request, Response
-from paillier import keygen
 
 from encryptor import EncryptionFactory
 from helpers import get_field_keys
+from key_storage import load_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
 from result_aggregator import ResultAggregator
@@ -21,8 +20,8 @@ try:
     POSTGRES_USERNAME = os.environ['POSTGRES_USERNAME']
     POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
     POSTGRES_DATABASE = os.environ['POSTGRES_DATABASE']
-except KeyError as key:
-    raise RuntimeError(f'{key} missing in environment')
+except KeyError as ope_key:
+    raise RuntimeError(f'{ope_key} missing in environment')
 
 app = Flask(__name__)
 
@@ -37,14 +36,8 @@ postgres_connector = PostgresConnector(
 with Path(__file__).parent as _root:
     with (_root / 'types.json').open('r') as fp:
         types = json.load(fp)
-    
-    with (_root / 'key_storage' / 'phe_public_key').open(mode='rb') as fp:
-        phe_public_key = pickle.load(fp)  # type: keygen.PublicKey
-    
-    with (_root / 'key_storage' / 'phe_private_key').open(mode='rb') as fp:
-        phe_private_key = pickle.load(fp)
 
-key = b'a' * 32
+phe_public_key, phe_private_key, ope_key = load_keys()
 
 query_parser = QueryParser()
 write_parser = WriteParser()
@@ -53,7 +46,7 @@ with EncryptionFactory(types=types,
                        float_converting_ratio=2 ** 51,
                        paillier_pub_key=phe_public_key,
                        paillier_priv_key=phe_private_key,
-                       key=key) as encryption_factory:
+                       ope_key=ope_key) as encryption_factory:
     write_tokens_encryptor = encryption_factory.write_encryptor()
     query_tokens_encryptor = encryption_factory.query_encryptor()
     result_decryptor = encryption_factory.result_decryptor()

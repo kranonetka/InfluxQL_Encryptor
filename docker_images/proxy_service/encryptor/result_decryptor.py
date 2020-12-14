@@ -1,4 +1,5 @@
 from typing import List
+
 from parsers import Action
 from ._encryptor import Encryptor
 
