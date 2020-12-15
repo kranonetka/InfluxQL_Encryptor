@@ -5,25 +5,29 @@
         "type": "string",
         "operations": [
           "="
-        ]
+        ],
+        "isTag": true
       },
       "cpu_percent": {
         "type": "float",
         "operations": [
           "+"
-        ]
+        ],
+        "isTag": false
       },
       "cpu_freq": {
         "type": "float",
         "operations": [
           "+"
-        ]
+        ],
+        "isTag": false
       },
       "memory_used": {
         "type": "int",
         "operations": [
           ">"
-        ]
+        ],
+        "isTag": false
       }
     }
   }

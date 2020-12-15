@@ -6,7 +6,7 @@ from pathlib import Path
 from flask import Flask, request, Response
 
 from encryptor import EncryptionFactory
-from helpers import get_field_keys
+from helpers import get_field_keys, get_tag_keys
 from key_storage import load_keys
 from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
@@ -34,15 +34,15 @@ postgres_connector = PostgresConnector(
 )
 
 with Path(__file__).parent as _root:
-    with (_root / 'types.json').open('r') as fp:
-        types = json.load(fp)
+    with (_root / 'columns.json').open('r') as fp:
+        columns = json.load(fp)
 
 phe_public_key, phe_private_key, ope_key = load_keys()
 
 query_parser = QueryParser()
 write_parser = WriteParser()
 
-with EncryptionFactory(types=types,
+with EncryptionFactory(columns=columns,
                        float_converting_ratio=2 ** 51,
                        paillier_pub_key=phe_public_key,
                        paillier_priv_key=phe_private_key,
@@ -81,15 +81,13 @@ def query():
         
         tokens = query_parser.parse(influxql_query)
         
-        if tokens["action"] == Action.SHOW_FIELD_KEYS:
-            field_keys = get_field_keys(db_name, tokens['measurement'])
-            return ResultAggregator.assemble(field_keys, tokens)
-        
-        elif tokens['action'] == Action.SHOW_TAG_KEYS:
-            with open('tags.json', 'r') as fp:
-                data = json.load(fp)
-            tag_keys = data.get(db_name, {}).get(tokens['measurement'], [])
-            return ResultAggregator.assemble(tag_keys, tokens)
+        if tokens['action'] in (Action.SHOW_FIELD_KEYS, Action.SHOW_TAG_KEYS):
+            if tokens['action'] == Action.SHOW_TAG_KEYS:
+                func = get_tag_keys
+            else:
+                func = get_field_keys
+            result = func(columns, db_name, tokens['measurement'])
+            return ResultAggregator.assemble(result, tokens)
 
         encrypted_tokens = query_tokens_encryptor.encrypt(tokens)
 
@@ -112,13 +110,13 @@ def query():
 def write():
     payload = request.get_data().strip().decode()
     
-    single_line_tokens = write_parser.parse(payload)[0]  # TODO: multiple lines (not only 1st)
+    for single_line_tokens in write_parser.parse(payload):
     
-    encrypted_tokens = write_tokens_encryptor.encrypt(single_line_tokens, db=request.args.get("db"))
-    
-    postgres_query, params = WriteAggregator.assemble(encrypted_tokens)
-    
-    postgres_connector.execute(postgres_query, params)
+        encrypted_tokens = write_tokens_encryptor.encrypt(single_line_tokens, db=request.args.get("db"))
+        
+        postgres_query, params = WriteAggregator.assemble(encrypted_tokens)
+        
+        postgres_connector.execute(postgres_query, params)
     
     return Response(status=204)
 
