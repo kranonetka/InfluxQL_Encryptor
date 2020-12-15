@@ -167,7 +167,8 @@ class ResultAggregator:
                         {
                             "name": "measurements",
                             "columns": [
-                                "name"],
+                                "name"
+                            ],
                             "values": query_result
                         }
                     ]
