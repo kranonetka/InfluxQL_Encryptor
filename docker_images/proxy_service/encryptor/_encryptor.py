@@ -12,7 +12,7 @@ from pyope.ope import OPE, ValueRange
 
 class Encryptor(ABC):
     def __init__(
-            self, ope_key: bytes, types: dict, paillier_pub_key: PublicKey, paillier_priv_key: SecretKey,
+            self, ope_key: bytes, columns: dict, paillier_pub_key: PublicKey, paillier_priv_key: SecretKey,
             float_converting_ratio=2 ** 50):
         self._cipher_factory = Cipher(
             algorithm=algorithms.AES(ope_key),
@@ -32,7 +32,7 @@ class Encryptor(ABC):
         self._phe_encrypt = partial(paillier_crypto.encrypt, pk=paillier_pub_key)
         self._phe_decrypt = partial(paillier_crypto.decrypt, pk=paillier_pub_key, sk=paillier_priv_key)
         
-        self._types = types
+        self._columns = columns
     
     def encrypt_bytes(self, payload: bytes) -> bytes:
         """
