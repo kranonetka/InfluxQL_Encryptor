@@ -23,6 +23,7 @@ services:
       - POSTGRES_USERNAME=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DATABASE=laptop
+      - FLASK_PORT=5000
     depends_on:
       - timescale
 
