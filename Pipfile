@@ -16,6 +16,7 @@ pyope = "*"
 flask = "*"
 psycopg2 = "*"
 rens-paillier = "*"
+gunicorn = "*"
 
 [requires]
 python_version = "3.8"
