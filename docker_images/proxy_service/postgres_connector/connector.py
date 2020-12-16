@@ -1,3 +1,4 @@
+import time
 from contextlib import contextmanager
 
 import psycopg2
@@ -5,42 +6,46 @@ from psycopg2.extensions import cursor
 
 
 class PostgresConnector:
-    def __init__(self, host, port=5432, user='postgres', password='password', db=None):
-        self._credentials = dict(
+    def __init__(self, host, port=5432, user='postgres', password='password', db=None, attempts=10):
+        credentials = dict(
             host=host,
             port=port,
             user=user,
             password=password,
             dbname=db
         )
+        
+        for attempt in range(attempts):
+            try:
+                self._connection = psycopg2.connect(**credentials)
+            except psycopg2.OperationalError:
+                time.sleep(1)
+            else:
+                break
+        else:
+            raise ConnectionRefusedError('Postgres not available')
     
     @contextmanager
-    def cursor(self, use_db=True):  # type: (bool) -> cursor
+    def cursor(self):  # type: () -> cursor
         """
         Контекстный менеджер для получения курсора. По выходу из контекста все транзакции будут автоматически
         закоммичены, а соединение закрыто
         
-        :param use_db: Использовать ли базу данных при подключении
         :return: Курсор для взаимодействия с СУБД
         """
-        if use_db:
-            conn = psycopg2.connect(**self._credentials)
-        else:
-            conn = psycopg2.connect(**dict(self._credentials, dbname=None))
         
-        with conn, conn.cursor() as cur:
+        with self._connection, self._connection.cursor() as cur:
             yield cur
     
-    def execute(self, query, params=None, use_db=True):
+    def execute(self, query, params=None):
         """
         Выполнить SQL запрос с параметрами и вернуть **все** строки, если запрос должен что-то вернуть
         
         :param query: Запрос
         :param params: Параметры запроса (опционально)
-        :param use_db: Использовать ли базу данных при подключении
         :return: Результат выборки, если запрос должен что-то вернуть
         """
-        with self.cursor(use_db=use_db) as cur:
+        with self.cursor() as cur:
             cur.execute(query, params)
             if cur.description:
                 return cur.fetchall()
