@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pprint
 from pathlib import Path
@@ -12,6 +13,9 @@ from parsers import QueryParser, WriteParser, Action
 from postgres_connector import PostgresConnector
 from result_aggregator import ResultAggregator
 from token_aggregators import QueryAggregator, WriteAggregator
+
+logger = logging.getLogger('proxy')
+logger.setLevel(logging.DEBUG)
 
 try:
     FLASK_PORT = os.environ['FLASK_PORT']
@@ -79,7 +83,10 @@ def query():
         db_name = params.get("db")
         influxql_query = params.get("q")
         
+        logger.debug(f'{influxql_query=} on {db_name=}')
+        
         tokens = query_parser.parse(influxql_query)
+        logger.debug(f'{tokens=}')
         
         if tokens['action'] in (Action.SHOW_FIELD_KEYS, Action.SHOW_TAG_KEYS):
             if tokens['action'] == Action.SHOW_TAG_KEYS:
@@ -88,17 +95,17 @@ def query():
                 func = get_field_keys
             result = func(columns, db_name, tokens['measurement'])
             return ResultAggregator.assemble(result, tokens)
-
+        
         encrypted_tokens = query_tokens_encryptor.encrypt(tokens)
-
+        logger.debug(f'{encrypted_tokens=}')
+        
         postgres_query, params = query_tokens_aggregator.assemble(encrypted_tokens)
+        logger.debug(f'{postgres_query=}, {params=}')
         
         result = postgres_connector.execute(postgres_query, params)
+        logger.debug(f'{len(result)=}')
         
-        if tokens['action'] == Action.SELECT:
-            result = result_decryptor.decrypt(result, db=db_name, tokens=tokens)
-        
-        elif tokens['action'] == Action.SHOW_TAG_VALUES:
+        if tokens['action'] in (Action.SELECT, Action.SHOW_TAG_KEYS):
             result = result_decryptor.decrypt(result, db=db_name, tokens=tokens)
         
         return ResultAggregator.assemble(result, tokens)
@@ -109,12 +116,16 @@ def query():
 @app.route('/write', methods=["POST"])
 def write():
     payload = request.get_data().strip().decode()
+    logger.debug(f'{payload=}')
     
     for single_line_tokens in write_parser.parse(payload):
-    
+        logger.debug(f'{single_line_tokens=}')
+        
         encrypted_tokens = write_tokens_encryptor.encrypt(single_line_tokens, db=request.args.get("db"))
+        logger.debug(f'{encrypted_tokens=}')
         
         postgres_query, params = WriteAggregator.assemble(encrypted_tokens)
+        logger.debug(f'{postgres_query=}, {params=}')
         
         postgres_connector.execute(postgres_query, params)
     
