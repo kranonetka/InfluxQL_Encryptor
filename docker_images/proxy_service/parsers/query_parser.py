@@ -117,22 +117,23 @@ class QueryParser(NodeVisitor):
     
     def visit_where_clause(self, node: Node, visited_children: list):
         """
-        where_clause         = 'WHERE' ws+ lpar quoted_identifier ws* comp_op ws* string_lit rpar (ws* logical_op ws* where_time)?
-        where_time           = time_condition (ws* logical_op ws* time_condition)?
+        where_clause                 = 'WHERE' ws+ ((tag_comp ws+ logical_op ws+ where_time) / where_time)
+        tag_comp                     = lpar quoted_identifier ws* comp_op ws* string_lit rpar
+        where_time                   = time_condition (ws* logical_op ws* time_condition)?
         """
         conditions = []
         
-        tag_key = node.children[3].children[1].text
-        tag_op = node.children[5].text
-        tag_value = node.children[7].children[1].text
-        conditions.append((tag_key, tag_op, tag_value))
-        
-        time_conditions = visited_children[-1]
-        
-        if not isinstance(time_conditions, Node):  # if latest token present (returns as list)
-            conditions += time_conditions[-1][-1]  # Getting result of visit_where_time
-        
+        for children in visited_children[-1][0]:
+            if isinstance(children, tuple):
+                conditions += children
+                
         return {"where_conditions": conditions}
+    
+    def visit_tag_comp(self, node: Node, visited_children: list):
+        tag_key = node.children[1].children[1].text
+        tag_op = node.children[3].text
+        tag_value = node.children[5].children[1].text
+        return (tag_key, tag_op, tag_value),
     
     def visit_where_time(self, node: Node, visited_children: list):
         """
@@ -141,7 +142,7 @@ class QueryParser(NodeVisitor):
         conditions = [visited_children[0]]
         if not isinstance(visited_children[-1], Node):
             conditions.append(visited_children[-1][-1][-1])
-        return *conditions,
+        return tuple(conditions)
     
     def visit_time_condition(self, node: Node, visited_children: list):
         op = node.children[2].text
