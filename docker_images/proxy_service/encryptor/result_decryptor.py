@@ -1,3 +1,4 @@
+from operator import itemgetter, truediv
 from typing import List
 
 from parsers import Action
@@ -20,29 +21,28 @@ class ResultDecryptor(Encryptor):
         ]
         return query_result
     
-    def _decrypt_select(self, query_result, db, tokens):
+    def _decrypt_select(self, query_result: List[tuple], db, tokens):
+        
         if tokens.get('aggregation') == 'count':
             return query_result
-        field = self._columns.get(db, {}).get(tokens['measurement'], {}).get(tokens['field_key'])
-        field_type, supported_operation = field['type'], field['operations'][0]
+        
+        field_description = self._columns.get(db, {}).get(tokens['measurement'], {}).get(tokens['field_key'])
+        field_type, supported_operation = field_description['type'], field_description['operations'][0]
         
         if supported_operation == '>':
             decrypt = self.ope_decrypt
         else:  # +
             decrypt = self.phe_decrypt
         
-        query_result = [
-            [time, decrypt(int(value)), *others]
-            for time, value, *others in query_result
-        ]
+        final_iterator = map(decrypt, map(int, map(itemgetter(1), query_result)))
         
         if field_type == 'float':
-            query_result = [
-                [time, self.int_to_float(value), *others]
-                for time, value, *others in query_result
-            ]
+            final_iterator = map(self.int_to_float, final_iterator)
         
         if tokens.get('aggregation') == 'mean':
-            query_result = [(row[0], row[1] / row[2]) for row in query_result]
+            third_column = map(itemgetter(2), query_result)
+            final_iterator = map(truediv, final_iterator, third_column)
         
-        return query_result
+        time_column = map(itemgetter(0), query_result)
+        
+        return list(zip(time_column, final_iterator))
