@@ -126,7 +126,7 @@ class QueryParser(NodeVisitor):
         for children in visited_children[-1][0]:
             if isinstance(children, tuple):
                 conditions += children
-                
+
         return {"where_conditions": conditions}
     
     def visit_tag_comp(self, node: Node, visited_children: list):
