@@ -105,7 +105,7 @@ def query():
         result = postgres_connector.execute(postgres_query, params)
         logger.debug(f'{len(result)=}')
         
-        if tokens['action'] in (Action.SELECT, Action.SHOW_TAG_KEYS):
+        if tokens['action'] in (Action.SELECT, Action.SHOW_TAG_VALUES):
             result = result_decryptor.decrypt(result, db=db_name, tokens=tokens)
         
         return ResultAggregator.assemble(result, tokens)
