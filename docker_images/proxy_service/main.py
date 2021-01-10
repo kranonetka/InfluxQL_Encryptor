@@ -47,7 +47,7 @@ query_parser = QueryParser()
 write_parser = WriteParser()
 
 with EncryptionFactory(columns=columns,
-                       float_converting_ratio=2 ** 51,
+                       float_converting_ratio=2 ** 55,
                        paillier_pub_key=phe_public_key,
                        paillier_priv_key=phe_private_key,
                        ope_key=ope_key) as encryption_factory:

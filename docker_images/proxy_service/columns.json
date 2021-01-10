@@ -1,28 +1,21 @@
 {
   "laptop": {
     "laptop_meas": {
-      "hostname": {
+      "thread": {
         "type": "string",
         "operations": [
           "="
         ],
         "isTag": true
       },
-      "cpu_percent": {
+      "float": {
         "type": "float",
         "operations": [
           "+"
         ],
         "isTag": false
       },
-      "cpu_freq": {
-        "type": "float",
-        "operations": [
-          "+"
-        ],
-        "isTag": false
-      },
-      "memory_used": {
+      "int": {
         "type": "int",
         "operations": [
           ">"
