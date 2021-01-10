@@ -24,7 +24,7 @@ class WriteTokensEncryptor(Encryptor):
                     field_value = self.float_to_int(field_value)
                 
                 operations = self._columns.get(db, {}).get(tokens.get("measurement")).get(field_key).get("operations")
-                
+
                 if operations[0] == '>':
                     encrypted_field_value = self.ope_encrypt(field_value)
                 elif operations[0] == '+':
@@ -33,7 +33,10 @@ class WriteTokensEncryptor(Encryptor):
                     raise TypeError(f'Unsupported operation {operations[0]}')
             else:
                 raise TypeError(f'Unsupported type {type_of_value}')
-            
+
             encrypted["fields"][field_key] = encrypted_field_value
-        
+
+        if 'time' in tokens:
+            encrypted['time'] = tokens['time']
+
         return encrypted
