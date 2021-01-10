@@ -64,7 +64,7 @@ class WriteParser(NodeVisitor):
         return {'fields': fields}
     
     def visit_timestamp(self, node, visited_children):
-        return {'time': int(node.text)}
+        return {'time': int(node.text) / 1000}
     
     def visit_line(self, node: Node, visited_children: list):
         ret = dict()
