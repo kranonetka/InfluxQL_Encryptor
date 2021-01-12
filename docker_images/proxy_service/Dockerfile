@@ -8,4 +8,4 @@ RUN python -m pip install --upgrade pip && python -m pip install pipenv
 ADD . / ./
 RUN pipenv install --system
 
-CMD gunicorn -w 4 -b 0.0.0.0:$FLASK_PORT main:app
+CMD gunicorn --workers 4 --bind 0.0.0.0:$FLASK_PORT --timeout 0 main:app
