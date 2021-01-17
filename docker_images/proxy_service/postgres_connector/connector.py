@@ -1,4 +1,3 @@
-import time
 from contextlib import contextmanager
 
 import psycopg2
@@ -6,25 +5,26 @@ from psycopg2.extensions import cursor
 
 
 class PostgresConnector:
-    def __init__(self, host, port=5432, user='postgres', password='password', db=None, attempts=10):
-        credentials = dict(
+    def __init__(self, host, port=5432, user='postgres', password='password', db=None):
+        self._credentials = dict(
             host=host,
             port=port,
             user=user,
             password=password,
             dbname=db
         )
-        
-        for attempt in range(attempts):
+
+        self._connection_obj = None
+
+    @property
+    def _connection(self):
+        if self._connection_obj is None or self._connection_obj.closed:
             try:
-                self._connection = psycopg2.connect(**credentials)
+                self._connection_obj = psycopg2.connect(**self._credentials)
             except psycopg2.OperationalError:
-                time.sleep(1)
-            else:
-                break
-        else:
-            raise ConnectionRefusedError('Postgres not available')
-    
+                raise ConnectionRefusedError('Postgres not available')
+        return self._connection_obj
+
     @contextmanager
     def cursor(self):  # type: () -> cursor
         """
