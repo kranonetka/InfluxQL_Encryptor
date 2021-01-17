@@ -10,7 +10,7 @@ _root = Path(__file__).parent
 def generate_keys(phe_bits=128):
     phe_pk, phe_sk = keygen.generate_keys(phe_bits)
     
-    ope = sha256(str(phe_sk.mu + phe_sk.lam).encode()).digest()
+    ope = sha256(f'{phe_sk.mu}{phe_sk.lam}'.encode()).digest()
     
     return phe_pk, phe_sk, ope
 
